@@ -418,6 +418,20 @@ def main():
         print(f"[!] XGBoost failed: {e}")
         import traceback; traceback.print_exc()
 
+    bio_emb_path = os.path.join(os.path.dirname(checkpoints), "..", "data", "processed", "bio_embeddings.npy")
+    bio_emb_path = os.path.normpath(bio_emb_path)
+    if os.path.exists(bio_emb_path):
+        print("\n" + "=" * 60 + "\n  MODEL 4: XGBoost + Sentence-BERT bio embeddings\n" + "=" * 60)
+        try:
+            r = train_xgboost_fused(data, splits)
+            all_results.append(r)
+        except Exception as e:
+            print(f"[!] XGBoost fused failed: {e}")
+            import traceback; traceback.print_exc()
+    else:
+        print(f"\n[*] Skipping fused model: {bio_emb_path} not found.")
+        print(f"    Run python src/embed_bios.py first to generate bio embeddings.")
+
     if all_results:
         all_results.sort(key=lambda r: r["f1"], reverse=True)
         print(f"\n{'='*60}\n  COMPARISON\n{'='*60}")

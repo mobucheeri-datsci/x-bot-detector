@@ -1,3 +1,9 @@
+<<<<<<< Updated upstream
+=======
+# Capstone Project: X (formerly Twitter) Bot Detection
+## A Google Chrome Browser Extension for Real-Time Bot Identification of User Profiles on X
+
+>>>>>>> Stashed changes
 Student: Mohamed Bucheeri  
 Programme: General Assembly Data Science PT2 (BIBF Bahrain)  
 Date: April 2026
