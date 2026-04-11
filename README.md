@@ -1,9 +1,9 @@
 # Capstone Project: X (formerly Twitter) Bot Detection
 ## A Google Chrome Browser Extension for Real-Time Bot Identification of User Profiles on X
 
-Student: Mohamed Bucheeri
+Done by: Mohamed Bucheeri
 Programme: General Assembly Data Science PT2 (BIBF Bahrain)
-Date: April 2026
+Date: April 11 2026
 
 ### Introduction
 This project trains a machine learning model to detect bot accounts on X and deploys it as a Google Chrome browser extension that makes a decision on any profile in real time. The pipeline covers data preprocessing, feature engineering, model training, comparison, deployment via a FastAPI backend, and integration with the extension. Three classifiers are compared on 37,438 labelled accounts: BiGRU-LSTM, CNN-BiLSTM, and XGBoost. The best model is selected automatically, served from the API, and consumed by the extension.
