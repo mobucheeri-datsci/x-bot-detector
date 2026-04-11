@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE / Tools
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Data (download via script)
+data/raw/*.csv
+data/raw/glove/
+data/raw/mgtab/
+data/processed/*.pt
+data/processed/*.npy
+
+# Models
+models/checkpoints/
+models/*.pt
+models/*.onnx
+
+# Environment
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Tensorboard
+runs/
+
+# OS
+Thumbs.db
