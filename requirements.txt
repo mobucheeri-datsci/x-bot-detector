@@ -1,26 +1,15 @@
-# Deep learning
-torch>=2.0
-sentence-transformers
-
-# Data & ML
 datasets
-pandas
-xgboost
-numpy
-scikit-learn
-ijson
-
-# API
 fastapi
-uvicorn[standard]
-pydantic
-
-# Training
-tqdm
-
-# Visualisation
-matplotlib
-seaborn
-
-# Notebooks
+ijson
 jupyter
+matplotlib
+numpy
+pandas
+pydantic
+scikit-learn
+seaborn
+sentence-transformers
+torch
+tqdm
+uvicorn[standard]
+xgboost
