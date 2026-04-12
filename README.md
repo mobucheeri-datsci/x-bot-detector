@@ -15,19 +15,18 @@ Automated accounts make up a large and growing share of activity on social media
 To build a machine learning system that detects bot accounts on X from only the profile metadata a browser extension can see, and to ship it as a working tool anyone can install.
 
 ### Project Objectives
-1. Acquire and preprocess a public labelled dataset of X accounts.
-2. Engineer behavioural features that capture how bots differ from real users.
+1. Find and preprocess a public labelled dataset of X accounts.
+2. Engineer features that capture how bots differ from real users.
 3. Train and compare three classifier families (RNN, CNN, gradient-boosted trees).
 4. Address class imbalance through weighted loss and tune the decision threshold per model.
-5. Select the best model by F1 on a held-out test set and serialise it for deployment.
-6. Serve the model via a FastAPI backend with documented prediction endpoints.
+5. Select the best model by F1 on a test set and prepare it to be deployed.
+6. Handle the model using a FastAPI backend with prediction endpoints.
 7. Build a Chrome extension that scrapes X profiles and displays bot scores in real time.
 8. Show which features pushed each score up or down, written as readable descriptions, across the popup, the inline panel, and the thread hover cards.
-9. Extend the extension with multi-context thread analysis and unsupervised coordinated inauthentic behaviour detection.
-10. Test the deployed model on a custom organisation benchmark and an architecture-transfer experiment on MGTAB.
+9. Compare results with an external model.
 
 ### Executive Summary
-The XGBoost model trained on 37 engineered numeric features reached F1 = 0.8076, ROC-AUC = 0.9329, and accuracy = 0.8725 on a held-out test set of 5,616 users. BiGRU-LSTM and CNN-BiLSTM came in 1.6 and 5.7 F1 points behind. The top features by gain importance were `verified` (0.20), `followers_count` (0.11), `is_established_account` (0.10), and `log_followers_count` (0.07). Gradient-boosted trees beating deep learning on tabular features matches what the literature reports (Shwartz-Ziv and Armon, 2022; Grinsztajn, Oyallon and Varoquaux, 2022). The Chrome extension shows the same per-feature breakdown wherever it scores something. That means the inline panel on profile pages, the toolbar popup, and the hover card on each reply dot in a tweet thread. It also runs unsupervised clustering on visible reply features to flag groups of similar accounts as possible coordinated inauthentic behaviour. A custom benchmark of 50 verified organisations confirmed the model classifies all 50 as HUMAN once it has complete metadata. An architecture-transfer experiment on MGTAB (Liu et al., 2023) reached F1 = 0.8364, close to MGTAB's published Random Forest baseline.
+The XGBoost model trained on 37 engineered numeric features reached F1 = 0.8076, ROC-AUC = 0.9329, and accuracy = 0.8725 on a held-out test set of 5,616 users. BiGRU-LSTM and CNN-BiLSTM came in 1.6 and 5.7 F1 points behind. The top features by gain importance were `verified` (0.20), `followers_count` (0.11), `is_established_account` (0.10), and `log_followers_count` (0.07). Gradient-boosted trees beating deep learning on tabular features matches what the literature reports (Shwartz-Ziv and Armon, 2022; Grinsztajn, Oyallon and Varoquaux, 2022). The Chrome extension shows the same per-feature breakdown wherever it scores something. That means the inline panel on profile pages, the toolbar popup, and the hover card on each reply dot in a tweet thread. It also runs unsupervised clustering on visible reply features to flag groups of similar accounts as possible coordinated inauthentic behaviour. A custom benchmark of 50 verified organisations confirmed the model classifies all 50 as HUMAN once it has complete metadata. A comparison with the MGTAB model (Liu et al., 2023) reached F1 = 0.8364, close to MGTAB's published Random Forest baseline.
 
 ### Audience
 Everyday social media users who want a quick way to check suspicious accounts. Researchers, journalists, and fact-checkers who need a fast screening tool. Data science students who want a worked end-to-end ML pipeline.
@@ -47,7 +46,7 @@ Everyday social media users who want a quick way to check suspicious accounts. R
 9. Evaluate on the held-out test set using F1, accuracy, precision, recall, ROC-AUC, and PR-AUC.
 10. Save the best model by F1 and wire it into a FastAPI backend with `/predict` and `/predict_batch` endpoints.
 11. Build the Chrome extension with single-profile scoring, multi-context thread analysis, and CIB clustering.
-12. Test with a 50-organisation custom benchmark and an MGTAB architecture-transfer experiment.
+12. Validate the model's results using an external model, the MTGAB.
 
 ### File Directory
 ```
@@ -113,11 +112,11 @@ twitter-bot-detector/
 The full ordered list is in `src/config.py` as `numeric_features`. All features are normalised with a z-score scaler fitted on training data only to avoid data leakage.
 
 ### Model Architectures
-**BiGRU-LSTM with gated fusion.** Bidirectional GRU followed by an LSTM on word embeddings of the user's bio. Text branch combined with a `NumericNet` over the 37 numeric features through a learned sigmoid gate that decides per-sample which branch to weigh more.
+BiGRU-LSTM with gated fusion: Bidirectional GRU followed by an LSTM on word embeddings of the user's bio. Text branch combined with a `NumericNet` over the 37 numeric features through a learned sigmoid gate that decides per-sample which branch to weigh more.
 
-**CNN-BiLSTM with gated fusion.** Multi-kernel 1D CNN (kernel sizes 3, 4, 5) plus max-over-time pooling and a bidirectional LSTM. Same `NumericNet` and gated fusion.
+CNN-BiLSTM with gated fusion: Multi-kernel 1D CNN (kernel sizes 3, 4, 5) plus max-over-time pooling and a bidirectional LSTM. Same `NumericNet` and gated fusion.
 
-**XGBoost.** Gradient-boosted trees on the 37 engineered features. `scale_pos_weight = 2.03` for the 2:1 imbalance.
+XGBoost: Gradient-boosted trees on the 37 engineered features. `scale_pos_weight = 2.03` for the 2:1 imbalance.
 
 All three use class-weighted loss, early stopping on validation F1, and a per-model decision threshold tuned on the validation set.
 
@@ -130,30 +129,18 @@ All three use class-weighted loss, early stopping on validation F1, and a per-mo
 
 XGBoost has the highest F1 and accuracy. Training time differs by three orders of magnitude (1 s for XGBoost vs 829 s for BiGRU-LSTM). XGBoost weights `verified` highest at 0.20 followed by raw `followers_count` at 0.11 and the engineered `is_established_account` flag at 0.10. A Random Forest baseline puts log-transformed counts at the top of the importance ranking with raw counts close behind. Full charts, ROC curves, and confusion matrices are in `notebooks/analysis.ipynb`.
 
-### Real Model Explainability
-The original popup signals were a hand-coded `if`/`elif` rule list disconnected from the model. The new implementation calls XGBoost's `pred_contribs` and returns the actual per-feature contribution to the log-odds output. Each contribution carries a plain-English description from the `feature_descriptions` dict in `api/app.py` (so `favourites_to_statuses_ratio` becomes "likes given per tweet posted").
+### Benchmark on 50 Verified Organisations
+A benchmark of 50 verified organisations (15 news, 10 tech, 10 retail, 8 sports, 7 NGOs and government) tests how the model handles legitimate organisation accounts. The model classifies all 50 as HUMAN on its own with no organisation scoring above 50/100. The news-organisation override only changes the score for 2 of 50 accounts (NFL and F1). 
 
-The same explanation shows up everywhere the extension scores something. There is an inline rich panel injected into profile pages by `content.js`, the toolbar popup with an "open full view in new tab" button that escapes Chrome's popup size cap via `chrome.storage.local`, and rich hover cards on every reply dot in tweet threads. Each one has a horizontal score legend bar showing where the score sits between HUMAN, UNCERTAIN, and BOT zones.
-
-### Multi-Context Thread Analysis
-A second content script (`extension/content/thread.js`) loads on tweet detail pages, scrapes reply authors via a `MutationObserver` plus a polling fallback, batches them to a `/predict_batch` API endpoint, injects coloured dots inline, and renders a sticky panel with running totals and CIB cluster banners. The popup queries `thread.js` via `GET_THREAD_STATS` when opened on a tweet page. URL changes trigger cleanup so panel state does not leak between SPA navigations.
-
-The CIB detector uses greedy single-linkage agglomerative clustering on visible reply features (handle length, digit ratio, ends-in-digits flag, Jaccard overlap on handle tokens). Clusters with at least 3 members are flagged as suspicious if at least two of these hold: all members end in 3+ digits, all members are scored bot or uncertain, all members have digit ratio above 0.2.
-
-The reply DOM exposes only username, display name, and verified status. Per-reply scores are therefore approximate; the aggregate counts and CIB banners are the more reliable outputs. Improving DOM scraping is the largest single follow-up for the deployed product.
-
-### Custom Benchmark on 50 Verified Organisations
-A hand-curated benchmark of 50 verified organisations (15 news, 10 tech, 10 retail, 8 sports, 7 NGOs and government) tests how the model handles legitimate organisation accounts. The model classifies all 50 as HUMAN on its own with no organisation scoring above 50/100. The news-organisation override only changes the score for 2 of 50 accounts (NFL and F1). The live extension misclassifications observed earlier on Al Jazeera and CNN therefore trace back to incomplete DOM scraping in `content.js`, not to model behaviour. Implementation in `src/orgs_eval.py`.
-
-### External Validation on MGTAB
-MGTAB (Liu et al., 2023, arXiv:2301.01123) is a published bot detection dataset with 10,199 expert-annotated users and a multi-relational graph. It ships only as preprocessed PyTorch tensors with 788 pre-extracted features per user. We trained the same XGBoost architecture on its features as an architecture-transfer experiment.
+### External Validation on MGTAB Model
+MGTAB (Liu et al., 2023, arXiv:2301.01123) is a published bot detection dataset with 10,199 expert-annotated users and a multi-relational graph. It ships only as preprocessed PyTorch tensors with 788 pre-extracted features per user. We trained the same XGBoost architecture on its features to validate the results.
 
 | Model | F1 on MGTAB |
 |---|---|
 | Random Forest (Liu et al., 2023) | ~0.84 |
 | GCN (Liu et al., 2023) | ~0.86 |
 | RGT (Liu et al., 2023) | ~0.89 |
-| Our XGBoost | 0.8364 |
+| XGBoost | 0.8364 |
 
 The XGBoost matches MGTAB's published Random Forest baseline. Graph-based models reach a few points higher because MGTAB's contribution is its multi-relational graph, which feature-only models cannot use. Implementation in `src/mgtab_eval.py`.
 
@@ -180,12 +167,12 @@ python src/mgtab_eval.py
 uvicorn api.app:app --reload --port 8000
 ```
 
-Then in Chrome: `chrome://extensions` --> enable Developer mode --> Load unpacked --> select `extension/`. Navigate to any X profile or tweet detail page to see the inline panel, popup, and thread analysis.
+Then in Chrome: `chrome://extensions` -> enable Developer mode -> Load unpacked -> select `extension/`. Navigate to any X profile or tweet detail page to see the inline panel, popup, and thread analysis.
 
 ### Conclusion
-The deployed XGBoost reaches F1 = 0.8076, ROC-AUC = 0.9329, and accuracy = 0.8725 on the test set of 5,616 users. BiGRU-LSTM lands 1.6 F1 points behind and CNN-BiLSTM lands 5.7 points behind, even though both neural models have around 10 million parameters and the XGBoost does not. The four highest-importance features by gain are `verified` (0.20), `followers_count` (0.11), `is_established_account` (0.10), and `log_followers_count` (0.07). The Sentence-BERT bio embedding fusion experiment in section 6 regresses by 0.0025 F1 against the baseline. 19% of bios in the dataset are empty and the median bio length is 53 characters, so most are shorter than what SBERT was trained on. This is consistent with Shwartz-Ziv and Armon (2022).
+The deployed XGBoost model reaches F1 = 0.8076, ROC-AUC = 0.9329, and accuracy = 0.8725 on the test set of 5,616 users. BiGRU-LSTM lands 1.6 F1 points behind and CNN-BiLSTM lands 5.7 points behind, even though both neural models have around 10 million parameters and the XGBoost does not. The four highest-importance features by gain are `verified` (0.20), `followers_count` (0.11), `is_established_account` (0.10), and `log_followers_count` (0.07). The Sentence-BERT bio embedding fusion experiment in section 6 regresses by 0.0025 F1 against the baseline. 19% of bios in the dataset are empty and the median bio length is 53 characters, so most are shorter than what SBERT was trained on. This is consistent with Shwartz-Ziv and Armon (2022).
 
-The 50-organisation benchmark in section 7 classifies all 50 verified organisations as HUMAN when given complete metadata, and the news-organisation override only changes the score for 2 of them (NFL and F1). The live extension errors on Al Jazeera (84/100) and CNN (92/100) trace back to incomplete metadata in the DOM scraping path of `content.js`, not to the model. Improving the scraper to read more profile fields from the hover cards is the highest-impact follow-up for the deployed product. The architecture-transfer test on MGTAB (Liu et al., 2023) reached F1 = 0.8364 on the 788 pre-computed features, around the level of MGTAB's published Random Forest baseline of 0.84. The graph-based models on the same dataset reach 0.86 to 0.89, and the gap there is the social graph that a browser extension cannot see at inference. Within the profile-only constraint, the deployed XGBoost plus the per-prediction contributions from section 5 give an everyday user a way to screen suspicious accounts without needing API access or paid subscription.
+The 50-organisation benchmark in classifies all 50 verified organisations as HUMAN when given complete metadata, and the news-organisation override only changes the score for 2 of them (NFL and F1). The live extension errors on Al Jazeera (84/100) and CNN (92/100) trace back to incomplete metadata in the DOM scraping path of `content.js`, not to the model. Improving the scraper to read more profile fields from the hover cards is the highest-impact follow-up for the deployed product. The comparison with MGTAB (Liu et al., 2023) reached F1 = 0.8364 on the 788 pre-computed features, around the level of MGTAB's published Random Forest baseline of 0.84. The graph-based models on the same dataset reach 0.86 to 0.89, and the gap there is the social graph that a browser extension cannot see at inference. Within the profile-only constraint, the deployed XGBoost plus the per-prediction contributions give an everyday user a way to screen suspicious accounts without needing API access or paid subscription.
 
 ### Recommendations
 1. Use the extension as a general screening for bot detection when using it on the site. Manual review should still be carried out regularly.
@@ -198,7 +185,7 @@ The 50-organisation benchmark in section 7 classifies all 50 verified organisati
 2. Graph neural networks. On TwiBot-22 (Feng et al., 2022) and MGTAB they sit a few F1 points above feature-only models, but the graph data is not available to a browser extension at inference time.
 3. Cross-platform generalisation to Instagram, Threads, Reddit, or YouTube.
 4. Modern LLM-driven bots. The current dataset predates ChatGPT-style accounts.
-5. Temporal behavioural signals from visible tweet timestamps.
+5. Time-sensing behavioural signals from visible tweet timestamps.
 
 ### Limitations
 The dataset is from 2018-2020 and contains no modern LLM-driven bot accounts. The deployed model only sees profile-level features, which means it cannot use the social graph or full tweet history. A Sentence-BERT bio embedding fusion experiment produced a small F1 regression (-0.0025), so the deployed model stays at the 37-feature baseline. The live extension misclassifications on Al Jazeera and CNN trace to incomplete DOM scraping in `content.js`, not to the model itself. Therefore, improving the scraper to recover follower count and account age from hover cards would be an inpactful change to make post-deployment.
