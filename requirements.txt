@@ -9,11 +9,7 @@ pydantic
 scikit-learn
 seaborn
 sentence-transformers
-<<<<<<< Updated upstream
 torch
-=======
-torch>=2.0
->>>>>>> Stashed changes
 tqdm
-uvicorn[standard]
+uvicorn
 xgboost
