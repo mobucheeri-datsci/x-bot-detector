@@ -1,6 +1,9 @@
 # X Bot Detector
 A Chrome extension that scores any X profile for bot likelihood in real time, backed by an XGBoost model trained on 37,438 labelled accounts.
 
+Author: Mohamed Bucheeri
+Date: April 17 2026
+
 ## Problem Statement
 Automated accounts make up a large and growing share of activity on social media. The 2024 Imperva Bad Bot Report found that almost half of all internet traffic in 2023 was automated, with bad bots responsible for 32% of total traffic (Imperva, 2024). On X, automated accounts amplify low-credibility content (Shao et al., 2018), distort political discourse during elections (Bessi and Ferrara, 2016; Howard, Woolley and Calo, 2018), and increase exposure to negative material (Stella, Ferrara and De Domenico, 2018). As an active user on X, I often cannot tell what is real or automated (Ferrara et al., 2016; Cresci, 2020).
 
