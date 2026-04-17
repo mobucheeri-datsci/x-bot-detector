@@ -15,39 +15,35 @@ from src.config import (
     max_seq_len, max_vocab_size, glove_dim, glove_file,
 )
 
-
 def download_dataset():
     if os.path.exists(dataset_csv):
         return
 
-    print("[*] Dataset not found, downloading from HuggingFace...")
-    try:
-        from datasets import load_dataset
-    except ImportError:
-        raise RuntimeError("Install datasets: pip install datasets")
+    print("Dataset not found, downloading from Hugging Face")
+    from datasets import load_dataset
 
     os.makedirs(data_raw, exist_ok=True)
     ds = load_dataset("airt-ml/twitter-human-bots", split="train")
     ds.to_csv(dataset_csv)
-    print(f"[+] Downloaded {len(ds):,} rows to {dataset_csv}")
+    print(f"Downloaded {len(ds):,} rows to {dataset_csv}")
 
 
 def load_and_preprocess():
-    print("[*] Loading dataset...")
+    print("Loading dataset")
     download_dataset()
 
     if not os.path.exists(dataset_csv):
         raise FileNotFoundError("Dataset not found and download failed.")
 
     df = pd.read_csv(dataset_csv)
-    print(f"    Rows: {len(df):,}")
+    print(f"Rows: {len(df):,}")
 
     df["label"] = df["account_type"].map(label_map)
     df = df.dropna(subset=["label"])
     df["label"] = df["label"].astype(int)
 
     bot_count = df["label"].sum()
-    print(f"    Bots: {bot_count:,}  |  Humans: {len(df) - bot_count:,}")
+    print(f"Bots: {bot_count:,}, humans: {len(df) - bot_count:,}")
 
     df["followers_count"] = df["followers_count"].fillna(0).astype(float)
     df["friends_count"] = df["friends_count"].fillna(0).astype(float)
@@ -111,7 +107,7 @@ def load_and_preprocess():
     df["log_tweets_per_follower"] = np.log1p(df["tweets_per_follower"])
     df["log_followers_to_friends_ratio"] = np.log1p(df["followers_to_friends_ratio"])
 
-    print(f"    Engineered {len(numeric_features)} features")
+    print(f"Engineered {len(numeric_features)} features")
 
     texts = []
     for _, row in df.iterrows():
@@ -132,8 +128,8 @@ def load_and_preprocess():
         "test":  [user_ids[i] for i in indices[val_end:]],
     }
 
-    print(f"    Split: train={len(splits['train']):,} val={len(splits['val']):,} test={len(splits['test']):,}")
-    print(f"[+] Preprocessed {n:,} users")
+    print(f"Split: {len(splits['train']):,} train, {len(splits['val']):,} val, {len(splits['test']):,} test")
+    print(f"Preprocessed {n:,} users")
 
     return df, texts, df["label"].values, splits, user_ids
 
@@ -150,7 +146,7 @@ def save_processed(df, texts, labels, splits, user_ids):
     std[std == 0] = 1.0
 
     numeric_normalised = (numeric_values - mean) / std
-    print(f"    Normalised {len(numeric_features)} features (fitted on train split)")
+    print(f"Normalised {len(numeric_features)} features (fitted on train split)")
 
     torch.save({
         "texts": texts,
@@ -162,7 +158,7 @@ def save_processed(df, texts, labels, splits, user_ids):
         "numeric_std": std,
     }, os.path.join(data_processed, "processed.pt"))
 
-    print(f"[+] Saved to {data_processed}/")
+    print(f"Saved to {data_processed}/")
 
 
 def load_processed():
@@ -196,21 +192,17 @@ def create_datasets(data, splits):
     numeric = data["numeric_features"]
     labels = data["labels"]
     user_ids = data["user_ids"]
-
     train = TwiBotDataset(texts, numeric, labels, user_ids, splits.get("train"))
     val   = TwiBotDataset(texts, numeric, labels, user_ids, splits.get("val", splits.get("valid")))
     test  = TwiBotDataset(texts, numeric, labels, user_ids, splits.get("test"))
-
-    print(f"[*] Datasets: train={len(train)}, val={len(val)}, test={len(test)}")
+    print(f"Datasets: train={len(train)}, val={len(val)}, test={len(test)}")
     return train, val, test
-
 
 def _tokenize_text(text):
     text = text.lower()
     text = re.sub(r"<URL>", " url ", text)
     text = re.sub(r"[^\w\s]", " ", text)
     return text.split()
-
 
 class GloveVocab:
     def __init__(self, word2idx=None):
@@ -229,7 +221,7 @@ class GloveVocab:
         for word, _ in counter.most_common(max_vocab - 2):
             word2idx[word] = len(word2idx)
         vocab = cls(word2idx)
-        print(f"[+] Vocabulary: {vocab.vocab_size:,} words")
+        print(f"Vocabulary: {vocab.vocab_size:,} words")
         return vocab
 
     def tokenize_batch(self, texts, max_len=max_seq_len):
@@ -242,7 +234,7 @@ class GloveVocab:
         return torch.tensor(batch, dtype=torch.long)
 
     def load_glove_embeddings(self, path=glove_file):
-        print(f"[*] Loading GloVe from {os.path.basename(path)}...")
+        print(f"Loading GloVe from {os.path.basename(path)}")
         glove = {}
         with open(path, "r", encoding="utf-8") as f:
             for line in f:
@@ -253,7 +245,7 @@ class GloveVocab:
         matrix = np.random.normal(scale=0.6, size=(self.vocab_size, glove_dim)).astype(np.float32)
         matrix[0] = 0.0
         found = sum(1 for w in self.word2idx if w in glove)
-        print(f"[+] GloVe coverage: {found:,}/{self.vocab_size:,} ({found/self.vocab_size*100:.1f}%)")
+        print(f"GloVe coverage: {found:,}/{self.vocab_size:,} ({found/self.vocab_size*100:.1f}%)")
         for w, i in self.word2idx.items():
             if w in glove:
                 matrix[i] = glove[w]
@@ -262,7 +254,7 @@ class GloveVocab:
     def random_embeddings(self):
         matrix = np.random.normal(scale=0.6, size=(self.vocab_size, glove_dim)).astype(np.float32)
         matrix[0] = 0.0
-        print(f"[*] Using random embeddings ({self.vocab_size:,} x {glove_dim})")
+        print(f"Using random embeddings ({self.vocab_size:,} x {glove_dim})")
         return matrix
 
     def save(self, path):
@@ -273,7 +265,6 @@ class GloveVocab:
     def load(cls, path):
         with open(path) as f:
             return cls(json.load(f))
-
 
 if __name__ == "__main__":
     df, texts, labels, splits, user_ids = load_and_preprocess()

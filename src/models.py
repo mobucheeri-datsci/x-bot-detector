@@ -8,7 +8,6 @@ from src.config import (
     cnn_filters, cnn_num_filters,
 )
 
-
 class NumericNet(nn.Module):
     def __init__(self, num_features=num_numeric_features, hidden=128, dropout=dropout):
         super().__init__()

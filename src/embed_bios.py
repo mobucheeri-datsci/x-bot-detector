@@ -8,7 +8,6 @@ from sentence_transformers import SentenceTransformer
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.config import data_processed
 
-
 def main():
     proc_path = os.path.join(data_processed, "processed.pt")
     if not os.path.exists(proc_path):
@@ -33,7 +32,6 @@ def main():
     proc["has_bio_embeddings"] = True
     torch.save(proc, proc_path)
     print(f"flagged processed.pt has_bio_embeddings = True")
-
 
 if __name__ == "__main__":
     main()

@@ -26,7 +26,7 @@ def main():
 
     n = features.shape[0]
     print(f"loaded mgtab: {n:,} users, {features.shape[1]} features")
-    print(f"  bot label balance: {(labels == 1).sum():,} bots, {(labels == 0).sum():,} humans")
+    print(f"bot label balance: {(labels == 1).sum():,} bots, {(labels == 0).sum():,} humans")
 
     rng = np.random.RandomState(42)
     indices = rng.permutation(n)
@@ -43,7 +43,7 @@ def main():
     pos = (y_train == 1).sum()
     neg = (y_train == 0).sum()
     scale_pos_weight = neg / pos
-    print(f"  train split: {len(train_idx):,}  scale_pos_weight={scale_pos_weight:.2f}")
+    print(f"train split: {len(train_idx):,} scale_pos_weight={scale_pos_weight:.2f}")
 
     model = xgb.XGBClassifier(
         n_estimators=1000,
@@ -64,11 +64,11 @@ def main():
     start = time.time()
     model.fit(x_train, y_train, eval_set=[(x_val, y_val)], verbose=False)
     elapsed = time.time() - start
-    print(f"  trained in {elapsed:.1f}s, best iteration {model.best_iteration}")
+    print(f"trained in {elapsed:.1f}s, best iteration {model.best_iteration}")
 
     val_prob = model.predict_proba(x_val)[:, 1]
     threshold, _ = find_best_threshold(y_val, val_prob)
-    print(f"  tuned threshold: {threshold:.3f}")
+    print(f"tuned threshold: {threshold:.3f}")
 
     y_prob = model.predict_proba(x_test)[:, 1]
     metrics = compute_metrics(y_test, y_prob, threshold=threshold)
@@ -84,20 +84,18 @@ def main():
     })
 
     cm = metrics["confusion_matrix"]
-    print(f"\n  test results (threshold={threshold:.3f}):")
-    print(f"    F1={metrics['f1']:.4f}  Acc={metrics['accuracy']:.4f}  ROC-AUC={metrics['roc_auc']:.4f}")
-    print(f"    Confusion: TN={cm[0][0]} FP={cm[0][1]} FN={cm[1][0]} TP={cm[1][1]}")
+    print(f"\ntest results (threshold={threshold:.3f}):")
+    print(f"F1={metrics['f1']:.4f}  Acc={metrics['accuracy']:.4f}  ROC-AUC={metrics['roc_auc']:.4f}")
+    print(f"Confusion: TN={cm[0][0]} FP={cm[0][1]} FN={cm[1][0]} TP={cm[1][1]}")
 
     out = os.path.join(checkpoints, "mgtab_eval_results.json")
     with open(out, "w") as f:
         json.dump(metrics, f, indent=2)
     print(f"\nsaved to {out}")
-
     print(f"\nfor reference, MGTAB published baselines (Liu et al. 2023, arxiv:2301.01123):")
-    print(f"  Random Forest: F1 around 0.84")
-    print(f"  GCN: F1 around 0.86")
-    print(f"  RGT: F1 around 0.89")
-
+    print(f"Random Forest: F1 around 0.84")
+    print(f"GCN: F1 around 0.86")
+    print(f"RGT: F1 around 0.89")
 
 if __name__ == "__main__":
     main()

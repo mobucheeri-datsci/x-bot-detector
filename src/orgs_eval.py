@@ -1,7 +1,6 @@
 import os
 import sys
 import json
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.config import checkpoints
 
@@ -66,10 +65,8 @@ orgs = [
 def evaluate():
     import numpy as np
     from api.app import predict, load_model, extract_numeric
-
     load_model()
     from api.app import _model, _numeric_mean, _numeric_std, _threshold
-
     rows = []
     fired = 0
     correct_with = 0
@@ -89,7 +86,6 @@ def evaluate():
         result_with = predict(profile)
         if result_with["override_applied"]:
             fired += 1
-
         raw = extract_numeric(profile)
         arr = np.array(raw, dtype=np.float32)
         if _numeric_mean is not None:
@@ -107,7 +103,6 @@ def evaluate():
             correct_with += 1
         if label_without == "human":
             correct_without += 1
-
         rows.append({
             "username": username,
             "label_with_override": result_with["label"],
@@ -132,25 +127,24 @@ def evaluate():
 
     print(f"\norgs evaluated: {len(orgs)}")
     print(f"override fired on: {fired}/{len(orgs)} accounts")
-    print(f"correctly classified as HUMAN without override: {correct_without}/{len(orgs)}")
-    print(f"correctly classified as HUMAN with override: {correct_with}/{len(orgs)}")
-    print(f"improvement from override: +{correct_with - correct_without}")
+    print(f"correctly classified as human without override: {correct_without}/{len(orgs)}")
+    print(f"correctly classified as human with override: {correct_with}/{len(orgs)}")
+    print(f"improvement from override: {correct_with - correct_without}")
 
     misses_with = [r for r in rows if r["label_with_override"] != "human"]
     if misses_with:
-        print(f"\nstill misclassified WITH override ({len(misses_with)}):")
+        print(f"\nstill misclassified with override ({len(misses_with)}):")
         for r in misses_with:
             print(f"  @{r['username']:<18} {r['label_with_override']:<9} ({r['score_with_override']}/100)")
+
     misses_without = [r for r in rows if r["label_without_override"] != "human"]
     if misses_without:
-        print(f"\nmisclassified WITHOUT override ({len(misses_without)}):")
+        print(f"\nmisclassified without override ({len(misses_without)}):")
         for r in misses_without:
-            star = " *" if r["override_fired"] else ""
-            print(f"  @{r['username']:<18} {r['label_without_override']:<9} ({r['score_without_override']}/100){star}")
-    print(f"\n* = override eligible (rescued by override)")
+            rescued = " (rescued by override)" if r["override_fired"] else ""
+            print(f"  @{r['username']:<18} {r['label_without_override']:<9} ({r['score_without_override']}/100){rescued}")
 
     print(f"\nsaved to {out_path}")
-
 
 if __name__ == "__main__":
     evaluate()

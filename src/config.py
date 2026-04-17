@@ -11,14 +11,12 @@ dataset_csv = os.path.join(data_raw, "twitter_human_bots.csv")
 glove_dir  = os.path.join(data_raw, "glove")
 glove_file = os.path.join(glove_dir, "glove.twitter.27B.200d.txt")
 
-
 def get_device():
     if torch.cuda.is_available():
         return torch.device("cuda")
     if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
         return torch.device("mps")
     return torch.device("cpu")
-
 
 device = get_device()
 

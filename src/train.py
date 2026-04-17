@@ -30,10 +30,10 @@ from src.models import BiGRU_LSTM, CNN_BiLSTM
 def compute_metrics(y_true, y_prob, threshold=0.5):
     y_pred = (y_prob >= threshold).astype(int)
     metrics = {
-        "accuracy":  round(accuracy_score(y_true, y_pred), 4),
+        "accuracy": round(accuracy_score(y_true, y_pred), 4),
         "precision": round(precision_score(y_true, y_pred, zero_division=0), 4),
-        "recall":    round(recall_score(y_true, y_pred, zero_division=0), 4),
-        "f1":        round(f1_score(y_true, y_pred, zero_division=0), 4),
+        "recall": round(recall_score(y_true, y_pred, zero_division=0), 4),
+        "f1": round(f1_score(y_true, y_pred, zero_division=0), 4),
         "threshold": round(float(threshold), 4),
     }
     try: metrics["roc_auc"] = round(roc_auc_score(y_true, y_prob), 4)
@@ -79,9 +79,7 @@ def train_neural(model, name, train_loader, val_loader, test_loader, pos_weight,
     ckpt_path = os.path.join(checkpoints, f"{name}_best.pt")
     best_f1, no_improve, history = 0.0, 0, []
 
-    print(f"\n{'='*60}")
-    print(f"  Training: {name}  |  Device: {device}  |  Params: {sum(p.numel() for p in model.parameters()):,}")
-    print(f"{'='*60}")
+    print(f"\nTraining {name} on {device} with {sum(p.numel() for p in model.parameters()):,} parameters")
 
     start = time.time()
     for epoch in range(1, max_epoch + 1):
@@ -114,21 +112,21 @@ def train_neural(model, name, train_loader, val_loader, test_loader, pos_weight,
                         "val_f1": val_m["f1"], "val_accuracy": val_m["accuracy"],
                         "lr": optimizer.param_groups[0]["lr"]})
 
-        print(f"  Epoch {epoch:>3}/{max_epoch}  loss={total_loss/n:.4f}  val_f1={val_m['f1']:.4f}  val_acc={val_m['accuracy']:.4f}")
+        print(f"epoch {epoch:>3}/{max_epoch}  loss={total_loss/n:.4f}  val_f1={val_m['f1']:.4f}  val_acc={val_m['accuracy']:.4f}")
 
         if val_m["f1"] > best_f1:
             best_f1 = val_m["f1"]
             no_improve = 0
             torch.save(model.state_dict(), ckpt_path)
-            print(f"  >> Saved best (F1={best_f1:.4f})")
+            print(f"  saved best (F1={best_f1:.4f})")
         else:
             no_improve += 1
             if no_improve >= early_stop:
-                print(f"  >> Early stopping at epoch {epoch}")
+                print(f"  early stopping at epoch {epoch}")
                 break
 
     elapsed = time.time() - start
-    print(f"  Done in {elapsed:.1f}s  |  Best F1: {best_f1:.4f}")
+    print(f"finished in {elapsed:.1f}s, best F1 = {best_f1:.4f}")
 
     model.load_state_dict(torch.load(ckpt_path, map_location="cpu", weights_only=True))
     model.to(device)
@@ -143,7 +141,7 @@ def train_neural(model, name, train_loader, val_loader, test_loader, pos_weight,
     val_probs = torch.sigmoid(torch.cat(val_logits)).cpu().numpy()
     val_labels = torch.cat(val_labels).cpu().numpy()
     best_threshold, _ = find_best_threshold(val_labels, val_probs)
-    print(f"  Tuned threshold: {best_threshold:.3f}")
+    print(f"tuned threshold: {best_threshold:.3f}")
 
     all_logits, all_labels = [], []
     with torch.no_grad():
@@ -161,11 +159,7 @@ def train_neural(model, name, train_loader, val_loader, test_loader, pos_weight,
         "num_params": sum(p.numel() for p in model.parameters()),
     })
 
-    cm = test_m["confusion_matrix"]
-    print(f"\n  Test Results for {name} (threshold={best_threshold:.3f}):")
-    print(f"    F1={test_m['f1']:.4f}  Acc={test_m['accuracy']:.4f}  ROC-AUC={test_m['roc_auc']:.4f}")
-    if len(cm) == 2:
-        print(f"    Confusion: TN={cm[0][0]} FP={cm[0][1]} FN={cm[1][0]} TP={cm[1][1]}")
+    print(f"test: F1={test_m['f1']:.4f}  Acc={test_m['accuracy']:.4f}  ROC-AUC={test_m['roc_auc']:.4f}")
 
     with open(os.path.join(checkpoints, f"{name}_results.json"), "w") as f:
         json.dump(test_m, f, indent=2)
@@ -181,9 +175,7 @@ def train_xgboost(data, splits):
     import xgboost as xgb
 
     name = "xgboost"
-    print(f"\n{'='*60}")
-    print(f"  Training: {name}")
-    print(f"{'='*60}")
+    print(f"\nTraining {name}")
 
     numeric = data["numeric_features"].numpy()
     labels = data["labels"].numpy()
@@ -201,7 +193,7 @@ def train_xgboost(data, splits):
     pos = (y_train == 1).sum()
     neg = (y_train == 0).sum()
     scale_pos_weight = neg / pos
-    print(f"  Class balance: {neg} humans, {pos} bots  |  scale_pos_weight={scale_pos_weight:.2f}")
+    print(f"class balance: {neg} humans, {pos} bots, scale_pos_weight={scale_pos_weight:.2f}")
 
     model = xgb.XGBClassifier(
         n_estimators=1000,
@@ -222,11 +214,11 @@ def train_xgboost(data, splits):
     start = time.time()
     model.fit(x_train, y_train, eval_set=[(x_val, y_val)], verbose=False)
     elapsed = time.time() - start
-    print(f"  Done in {elapsed:.1f}s  |  Best iteration: {model.best_iteration}")
+    print(f"  finished in {elapsed:.1f}s, best iteration {model.best_iteration}")
 
     val_prob = model.predict_proba(x_val)[:, 1]
     best_threshold, _ = find_best_threshold(y_val, val_prob)
-    print(f"  Tuned threshold: {best_threshold:.3f}")
+    print(f"  tuned threshold: {best_threshold:.3f}")
 
     y_prob = model.predict_proba(x_test)[:, 1]
     test_m = compute_metrics(y_test, y_prob, threshold=best_threshold)
@@ -236,11 +228,7 @@ def train_xgboost(data, splits):
         "num_params": model.n_estimators,
     })
 
-    cm = test_m["confusion_matrix"]
-    print(f"\n  Test Results for {name} (threshold={best_threshold:.3f}):")
-    print(f"    F1={test_m['f1']:.4f}  Acc={test_m['accuracy']:.4f}  ROC-AUC={test_m['roc_auc']:.4f}")
-    if len(cm) == 2:
-        print(f"    Confusion: TN={cm[0][0]} FP={cm[0][1]} FN={cm[1][0]} TP={cm[1][1]}")
+    print(f"  test: F1={test_m['f1']:.4f}  Acc={test_m['accuracy']:.4f}  ROC-AUC={test_m['roc_auc']:.4f}")
 
     os.makedirs(checkpoints, exist_ok=True)
     model.save_model(os.path.join(checkpoints, f"{name}_best.json"))
@@ -268,9 +256,7 @@ def train_xgboost_fused(data, splits):
     from src.config import data_processed
 
     name = "xgboost_fused"
-    print(f"\n{'='*60}")
-    print(f"  Training: {name}")
-    print(f"{'='*60}")
+    print(f"\nTraining {name}")
 
     bio_path = os.path.join(data_processed, "bio_embeddings.npy")
     if not os.path.exists(bio_path):
@@ -291,13 +277,13 @@ def train_xgboost_fused(data, splits):
     test_idx  = np.array([id_to_idx[uid] for uid in splits["test"]])
 
     x_train, y_train = fused[train_idx], labels[train_idx]
-    x_val,   y_val   = fused[val_idx],   labels[val_idx]
-    x_test,  y_test  = fused[test_idx],  labels[test_idx]
+    x_val, y_val = fused[val_idx], labels[val_idx]
+    x_test, y_test = fused[test_idx], labels[test_idx]
 
     pos = (y_train == 1).sum()
     neg = (y_train == 0).sum()
     scale_pos_weight = neg / pos
-    print(f"  Class balance: {neg} humans, {pos} bots  |  scale_pos_weight={scale_pos_weight:.2f}")
+    print(f"class balance: {neg} humans, {pos} bots, scale_pos_weight={scale_pos_weight:.2f}")
 
     model = xgb.XGBClassifier(
         n_estimators=1000,
@@ -318,11 +304,11 @@ def train_xgboost_fused(data, splits):
     start = time.time()
     model.fit(x_train, y_train, eval_set=[(x_val, y_val)], verbose=False)
     elapsed = time.time() - start
-    print(f"  Done in {elapsed:.1f}s  |  Best iteration: {model.best_iteration}")
+    print(f"finished in {elapsed:.1f}s, best iteration {model.best_iteration}")
 
     val_prob = model.predict_proba(x_val)[:, 1]
     best_threshold, _ = find_best_threshold(y_val, val_prob)
-    print(f"  Tuned threshold: {best_threshold:.3f}")
+    print(f"tuned threshold: {best_threshold:.3f}")
 
     y_prob = model.predict_proba(x_test)[:, 1]
     test_m = compute_metrics(y_test, y_prob, threshold=best_threshold)
@@ -333,11 +319,7 @@ def train_xgboost_fused(data, splits):
         "num_features": fused.shape[1],
     })
 
-    cm = test_m["confusion_matrix"]
-    print(f"\n  Test Results for {name} (threshold={best_threshold:.3f}):")
-    print(f"    F1={test_m['f1']:.4f}  Acc={test_m['accuracy']:.4f}  ROC-AUC={test_m['roc_auc']:.4f}")
-    if len(cm) == 2:
-        print(f"    Confusion: TN={cm[0][0]} FP={cm[0][1]} FN={cm[1][0]} TP={cm[1][1]}")
+    print(f"test: F1={test_m['f1']:.4f} Acc={test_m['accuracy']:.4f} ROC-AUC={test_m['roc_auc']:.4f}")
 
     os.makedirs(checkpoints, exist_ok=True)
     model.save_model(os.path.join(checkpoints, f"{name}_best.json"))
@@ -351,16 +333,7 @@ def train_xgboost_fused(data, splits):
 
 
 def main():
-    print("=" * 60)
-    print("  Twitter/X Bot Detector: Training")
-    print("=" * 60)
-
-    try:
-        data = load_processed()
-    except FileNotFoundError as e:
-        print(f"[!] {e}")
-        return
-
+    data = load_processed()
     splits = data["splits"]
     train_ds, val_ds, test_ds = create_datasets(data, splits)
 
@@ -368,9 +341,8 @@ def main():
     pos = (train_labels == 1).sum()
     neg = (train_labels == 0).sum()
     pos_weight = torch.tensor([neg / pos], dtype=torch.float32)
-    print(f"\n[*] Class balance: {neg} humans, {pos} bots  |  pos_weight={pos_weight.item():.2f}")
+    print(f"class balance: {neg} humans, {pos} bots, pos_weight={pos_weight.item():.2f}")
 
-    print("\n[*] Building vocabulary...")
     vocab = GloveVocab.build_from_corpus(train_ds.texts)
     os.makedirs(checkpoints, exist_ok=True)
     vocab.save(os.path.join(checkpoints, "vocab.json"))
@@ -378,74 +350,45 @@ def main():
     if os.path.exists(glove_file):
         embeddings = vocab.load_glove_embeddings()
     else:
-        print(f"[!] GloVe not found, using random embeddings")
+        print("GloVe not found, using random embeddings")
         embeddings = vocab.random_embeddings()
 
     glove_collate = partial(collate_glove, vocab=vocab)
     all_results = []
 
-    print("\n" + "=" * 60 + "\n  MODEL 1: BiGRU-LSTM + GloVe\n" + "=" * 60)
-    try:
-        model = BiGRU_LSTM(vocab_size=vocab.vocab_size, pretrained_embeddings=embeddings)
-        r = train_neural(model, "bigru_lstm",
+    model = BiGRU_LSTM(vocab_size=vocab.vocab_size, pretrained_embeddings=embeddings)
+    all_results.append(train_neural(model, "bigru_lstm",
                          DataLoader(train_ds, batch_size=64, shuffle=True, collate_fn=glove_collate),
                          DataLoader(val_ds, batch_size=64, collate_fn=glove_collate),
                          DataLoader(test_ds, batch_size=64, collate_fn=glove_collate),
-                         pos_weight=pos_weight)
-        all_results.append(r)
-    except Exception as e:
-        print(f"[!] BiGRU-LSTM failed: {e}")
-        import traceback; traceback.print_exc()
+                         pos_weight=pos_weight))
 
-    print("\n" + "=" * 60 + "\n  MODEL 2: CNN + BiLSTM\n" + "=" * 60)
-    try:
-        model = CNN_BiLSTM(vocab_size=vocab.vocab_size, pretrained_embeddings=embeddings)
-        r = train_neural(model, "cnn_bilstm",
+    model = CNN_BiLSTM(vocab_size=vocab.vocab_size, pretrained_embeddings=embeddings)
+    all_results.append(train_neural(model, "cnn_bilstm",
                          DataLoader(train_ds, batch_size=64, shuffle=True, collate_fn=glove_collate),
                          DataLoader(val_ds, batch_size=64, collate_fn=glove_collate),
                          DataLoader(test_ds, batch_size=64, collate_fn=glove_collate),
-                         pos_weight=pos_weight)
-        all_results.append(r)
-    except Exception as e:
-        print(f"[!] CNN-BiLSTM failed: {e}")
-        import traceback; traceback.print_exc()
+                         pos_weight=pos_weight))
 
-    print("\n" + "=" * 60 + "\n  MODEL 3: XGBoost (numeric features only)\n" + "=" * 60)
-    try:
-        r = train_xgboost(data, splits)
-        all_results.append(r)
-    except Exception as e:
-        print(f"[!] XGBoost failed: {e}")
-        import traceback; traceback.print_exc()
+    all_results.append(train_xgboost(data, splits))
 
     bio_emb_path = os.path.join(os.path.dirname(checkpoints), "..", "data", "processed", "bio_embeddings.npy")
     bio_emb_path = os.path.normpath(bio_emb_path)
     if os.path.exists(bio_emb_path):
-        print("\n" + "=" * 60 + "\n  MODEL 4: XGBoost + Sentence-BERT bio embeddings\n" + "=" * 60)
-        try:
-            r = train_xgboost_fused(data, splits)
-            all_results.append(r)
-        except Exception as e:
-            print(f"[!] XGBoost fused failed: {e}")
-            import traceback; traceback.print_exc()
+        all_results.append(train_xgboost_fused(data, splits))
     else:
-        print(f"\n[*] Skipping fused model: {bio_emb_path} not found.")
-        print(f"    Run python src/embed_bios.py first to generate bio embeddings.")
+        print(f"\nSkipping fused model. Run python src/embed_bios.py first to generate {bio_emb_path}.")
 
     if all_results:
         all_results.sort(key=lambda r: r["f1"], reverse=True)
-        print(f"\n{'='*60}\n  COMPARISON\n{'='*60}")
-        print(f"  {'Model':<25} {'F1':>6} {'Acc':>6} {'AUC':>6} {'Thresh':>7}")
+        print("\nComparison:")
         for r in all_results:
-            best = " << BEST" if r == all_results[0] else ""
-            print(f"  {r['model_name']:<25} {r['f1']:>6.4f} {r['accuracy']:>6.4f} {r['roc_auc']:>6.4f} {r['threshold']:>7.3f}{best}")
+            marker = "  (best)" if r == all_results[0] else ""
+            print(f"  {r['model_name']:<20} F1={r['f1']:.4f}  Acc={r['accuracy']:.4f}  AUC={r['roc_auc']:.4f}  thresh={r['threshold']:.3f}{marker}")
 
         with open(os.path.join(checkpoints, "best_model_info.json"), "w") as f:
             json.dump(all_results[0], f, indent=2)
-        print(f"\n[+] Best model: {all_results[0]['model_name']}")
-        print(f"    Start API: uvicorn api.app:app --reload")
-    else:
-        print("\n[!] No models trained.")
+        print(f"\nBest model: {all_results[0]['model_name']}")
 
 
 if __name__ == "__main__":
