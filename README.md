@@ -145,8 +145,8 @@ python src/orgs_eval.py # Run the 50-organisation benchmark against the saved mo
 To include the SBERT fused model described under Evaluation, run `embed_bios.py` before `train.py`:
 
 ```bash
-python src/embed_bios.py  # Encode all bios with Sentence-BERT and cache to disk
-python src/train.py       # Re-run; train.py auto-detects the cache and trains the fused variant
+python src/embed_bios.py
+python src/train.py
 ```
 
 ### External Validation on MGTAB
@@ -216,15 +216,13 @@ The Sentence-BERT bio embedding ablation regressed against the baseline (see Eva
 The live extension's only observed misclassifications (Al Jazeera at 84/100, CNN at 92/100) trace to incomplete DOM scraping in `content.js`, not to the model itself.
 
 ### Ethical Considerations
-The training labels were collected on English X content from 2018 to 2020. Non-English accounts and accounts from underrepresented regions are likely underrepresented in the labels. Nothing in this project tests for fairness across demographic or language dimensions, and a production deployment would need a proper audit.
+The training labels were collected on English X content from 2018 to 2020. Non-English accounts and accounts from underrepresented regions are likely underrepresented in the labels. Nothing in this project tests for fairness across demographic or language dimensions, and a live deployment would need a fairness audit.
 
-The `verified` feature is the model's strongest predictor of HUMAN. In 2018 to 2020 verification was a public-figure and institution badge, but after 2022 it became a paid subscription feature on X. A paid-verified modern bot would trigger the same HUMAN signal the model learned to trust. This is dataset drift the current model does not correct for.
+The `verified` feature is the model's strongest predictor of HUMAN. In 2018 to 2020 verification was a public-figure and institution badge, but after 2022 it became a paid subscription feature on X. A paid-verified modern bot would trigger the same HUMAN signal the model learned to trust.
 
-Data leakage is controlled at three points. The z-score scaler is fit on the training split only, each model's decision threshold is tuned on the validation split only, and the test set is scored exactly once per model after training and threshold tuning are frozen.
+Inference runs locally. The FastAPI backend listens on `localhost:8000` on the user's own machine, the Chrome extension calls only that endpoint, and no profile data is transmitted elsewhere. The backend does not write logs. So, a live deployment would need privacy disclosures.
 
-Inference runs locally. The FastAPI backend listens on `localhost:8000` on the user's own machine, the Chrome extension calls only that endpoint, and no profile data is transmitted elsewhere. The backend does not write logs. A hosted deployment would need explicit privacy disclosures.
-
-Wrongly labelling a real user as a bot is more costly than missing a bot, so the system is biased toward fewer false positives. Each model's decision threshold is tuned for F1 rather than accuracy, the extension returns UNCERTAIN when the score sits within 0.10 of the threshold, and the deployed XGBoost has the lowest false-positive count of the three models trained.
+Wrongly labelling a real user as a bot is more costly than missing a bot, so the system is biased toward fewer false positives. Each model's decision threshold is tuned for F1 instead of accuracy, the extension returns UNCERTAIN when the score sits within 0.10 of the threshold, and the deployed XGBoost has the lowest false-positive count of the three models trained.
 
 ### Future Work
 1. Scraper fixes for the live extension. Recovering follower count and account age from X's hover cards would resolve the Al Jazeera and CNN errors.
@@ -233,6 +231,7 @@ Wrongly labelling a real user as a bot is more costly than missing a bot, so the
 4. Temporal behavioural signals from visible tweet timestamps on a profile page.
 5. Cross-platform generalisation to Instagram, Threads, Reddit, or YouTube.
 6. Find and test more recent datasets that would more likely record LLM-driven bot behaviours across the features.
+
 ## Screenshots and Demo
 ### Demo Video
 A 3-minute walkthrough of the extension in action: [ADD_UNLISTED_YOUTUBE_OR_VIMEO_LINK_HERE]
@@ -252,13 +251,10 @@ Thread analysis showing hover cards on reply accounts and the coordinated inauth
 
 ## License and Acknowledgments
 ### License
-This project is released under the MIT License. See `LICENSE` for the full text.
-
-The training dataset (`twitter_human_bots.csv` from airt-ml) is distributed under CC BY-SA 3.0 and is not redistributed in this repository; it downloads from Hugging Face on first run. MGTAB (Liu et al., 2023) is distributed under its own terms by the original authors.
+The training dataset (`twitter_human_bots.csv` from airt-ml) is distributed under CC BY-SA 3.0 and is not redistributed in this repository. It downloads from Hugging Face on first run. MGTAB (Liu et al., 2023) is distributed under its own terms by the original authors.
 
 ### Acknowledgments
-- General Assembly Data Science PT2 programme, delivered through BIBF in Bahrain.
-- Tamkeen for programme sponsorship.
+- General Assembly Data Science PT2 Bootcamp, delivered through BIBF, Bahrain.
 - airt-ml for publishing the `twitter-human-bots` dataset on Hugging Face.
 - Liu et al. (2023) for making the MGTAB dataset and baselines public.
 - The authors of the libraries this project depends on: PyTorch, XGBoost, scikit-learn, pandas, NumPy, FastAPI, Hugging Face `datasets`, and Sentence-Transformers.
