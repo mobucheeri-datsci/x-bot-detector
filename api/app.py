@@ -1,21 +1,16 @@
 import os
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-
 import sys
 import re
 import json
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import numpy as np
 import torch
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
 from src.config import checkpoints, device, max_seq_len, data_processed, numeric_features
-
 
 _model = None
 _model_info = None
@@ -24,29 +19,23 @@ _numeric_mean = None
 _numeric_std = None
 _threshold = 0.5
 
-
 def load_model():
     global _model, _model_info, _tokenizer, _numeric_mean, _numeric_std, _threshold
     if _model is not None:
         return
-
     proc_path = os.path.join(data_processed, "processed.pt")
     if os.path.exists(proc_path):
         proc_data = torch.load(proc_path, weights_only=False)
         _numeric_mean = proc_data.get("numeric_mean")
         _numeric_std = proc_data.get("numeric_std")
-
     info_path = os.path.join(checkpoints, "best_model_info.json")
     if not os.path.exists(info_path):
         raise FileNotFoundError("No trained model. Run: python src/train.py")
-
     with open(info_path) as f:
         _model_info = json.load(f)
-
     name = _model_info["model_name"]
     model_type = _model_info.get("model_type", "neural")
     _threshold = float(_model_info.get("threshold", 0.5))
-
     if model_type == "xgboost":
         import xgboost as xgb
         _model = xgb.XGBClassifier()
@@ -63,7 +52,6 @@ def load_model():
         _model.to(device)
         _model.eval()
 
-
 def prepare_text(profile):
     parts = []
     bio = str(profile.get("bio", "") or profile.get("description", "") or "")
@@ -76,7 +64,6 @@ def prepare_text(profile):
     combined = " [SEP] ".join(parts)
     combined = re.sub(r"http\S+", "<URL>", combined)
     return re.sub(r"\s+", " ", combined).strip() or "<EMPTY>"
-
 
 def extract_numeric(profile):
     followers = float(profile.get("followers_count", 0))
@@ -91,28 +78,22 @@ def extract_numeric(profile):
     verified = int(profile.get("is_verified", False) or profile.get("verified", False))
     default_profile = int(profile.get("default_profile", False))
     default_avatar = int(profile.get("has_default_avatar", False) or profile.get("default_profile_image", False))
-
     f2f_ratio = followers / max(friends, 1)
     fav2stat_ratio = favourites / max(statuses, 1)
     fr2fol_ratio = friends / max(followers, 1)
     stat2fol_ratio = statuses / max(followers, 1)
-
     has_desc = int(len(bio) > 0)
     has_loc = int(len(location) > 0)
     completeness = has_desc + has_loc + (1 - default_profile) + (1 - default_avatar) + verified
-
     sn_digits = sum(c.isdigit() for c in username)
     sn_digit_ratio = sn_digits / max(len(username), 1)
     sn_underscore = int("_" in username)
-
     tweets_per_follower = statuses / max(followers, 1)
     tpd_per_follower = tweets_per_day / max(followers, 1)
-
     bio_urls = len(re.findall(r"http|www\.|\.com|\.net", bio))
     bio_hashtags = bio.count("#")
     bio_mentions = bio.count("@")
     bio_words = len(bio.split()) if bio else 0
-
     news_pattern = r"\b(?:news|breaking|daily|magazine|journal|times|herald|tribune|gazette|broadcast|media|press|reporter|journalist|editor|anchor|correspondent|coverage|headlines|report)\b"
     org_pattern = r"\b(?:official|corp|inc\.?|llc|ltd|company|brand|store|shop|support|customer|service|team|foundation|organisation|organization|ngo|charity)\b"
     bio_lower = bio.lower()
@@ -120,14 +101,12 @@ def extract_numeric(profile):
     bio_has_org = int(bool(re.search(org_pattern, bio_lower)))
     bio_likely_org = int((bio_has_news or bio_has_org) and followers > 1000 and age > 365)
     is_established = int(bool(verified) and followers > 10000 and age > 365)
-
     log_followers = float(np.log1p(followers))
     log_friends = float(np.log1p(friends))
     log_statuses = float(np.log1p(statuses))
     log_favourites = float(np.log1p(favourites))
     log_tpf = float(np.log1p(tweets_per_follower))
     log_f2f = float(np.log1p(f2f_ratio))
-
     return [
         followers, friends, statuses, favourites, age, tweets_per_day,
         log_followers, log_friends, log_statuses, log_favourites, log_tpf, log_f2f,
@@ -139,7 +118,6 @@ def extract_numeric(profile):
         bio_urls, bio_hashtags, bio_mentions, bio_words,
         bio_has_news, bio_has_org, bio_likely_org, is_established,
     ]
-
 
 feature_descriptions = {
     "followers_count": "total followers",
@@ -181,7 +159,6 @@ feature_descriptions = {
     "is_established_account": "verified, large following, account older than one year",
 }
 
-
 def format_feature_value(name, value):
     if name == "verified":
         return "yes" if value > 0.5 else "no"
@@ -214,7 +191,6 @@ def format_feature_value(name, value):
         return f"{value:.1f}"
     return str(value)
 
-
 def compute_contributions(numeric_arr, raw_numeric):
     if _model_info.get("model_type") != "xgboost":
         return None
@@ -223,9 +199,7 @@ def compute_contributions(numeric_arr, raw_numeric):
     dmatrix = xgb.DMatrix(numeric_arr.reshape(1, -1))
     contribs = booster.predict(dmatrix, pred_contribs=True)[0]
     feat_contribs = contribs[:-1]
-
     indexed = sorted(enumerate(feat_contribs), key=lambda x: abs(x[1]), reverse=True)
-
     toward_bot, toward_human = [], []
     for idx, contrib in indexed:
         if abs(contrib) < 0.01:
@@ -243,9 +217,7 @@ def compute_contributions(numeric_arr, raw_numeric):
             toward_bot.append(entry)
         elif contrib < 0 and len(toward_human) < 4:
             toward_human.append(entry)
-
     return {"toward_bot": toward_bot, "toward_human": toward_human}
-
 
 def generate_signals(profile, score):
     signals = []
@@ -253,7 +225,6 @@ def generate_signals(profile, score):
     following = int(profile.get("following_count", 0) or profile.get("friends_count", 0))
     tweets = int(profile.get("tweet_count", 0) or profile.get("statuses_count", 0))
     age = max(int(profile.get("account_age_days", 365)), 1)
-
     if followers / max(following, 1) < 0.1 and following > 100:
         signals.append("Very low follower-to-following ratio")
     if age < 30:
@@ -271,7 +242,6 @@ def generate_signals(profile, score):
     if not signals:
         signals.append("No strong bot signals detected")
     return signals
-
 
 def predict(profile):
     load_model()
@@ -313,7 +283,6 @@ def predict(profile):
         label = "bot"
     else:
         label = "human"
-
     return {
         "username": profile.get("username", ""),
         "bot_probability": round(bot_prob, 4),
@@ -326,7 +295,6 @@ def predict(profile):
         "threshold": round(_threshold, 4),
         "margin": round(margin, 4),
     }
-
 
 class PredictRequest(BaseModel):
     username: str
@@ -342,7 +310,6 @@ class PredictRequest(BaseModel):
     is_verified: bool = False
     url: str = ""
 
-
 class PredictResponse(BaseModel):
     username: str
     bot_probability: float
@@ -355,7 +322,6 @@ class PredictResponse(BaseModel):
     threshold: float = 0.5
     margin: float = 0.1
 
-
 app = FastAPI(title="Twitter Bot Detector API", version="1.0.0")
 
 app.add_middleware(
@@ -365,7 +331,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 @app.on_event("startup")
 async def startup():
@@ -387,14 +352,11 @@ async def predict_endpoint(request: PredictRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 class BatchRequest(BaseModel):
     profiles: list[PredictRequest]
 
-
 class BatchResponse(BaseModel):
     results: list[PredictResponse]
-
 
 @app.post("/predict_batch", response_model=BatchResponse)
 async def predict_batch_endpoint(request: BatchRequest):
@@ -407,7 +369,6 @@ async def predict_batch_endpoint(request: BatchRequest):
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get("/health")
 async def health():
