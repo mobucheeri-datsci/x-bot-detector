@@ -124,8 +124,8 @@ def load_and_preprocess():
     user_ids = [str(i) for i in range(n)]
     splits = {
         "train": [user_ids[i] for i in indices[:train_end]],
-        "val":   [user_ids[i] for i in indices[train_end:val_end]],
-        "test":  [user_ids[i] for i in indices[val_end:]],
+        "val": [user_ids[i] for i in indices[train_end:val_end]],
+        "test": [user_ids[i] for i in indices[val_end:]],
     }
 
     print(f"Split: {len(splits['train']):,} train, {len(splits['val']):,} val, {len(splits['test']):,} test")
