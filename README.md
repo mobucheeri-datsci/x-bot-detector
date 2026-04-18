@@ -232,7 +232,7 @@ Wrongly labelling a real user as a bot is more costly than missing a bot, so the
 
 ## Screenshots and Demo
 ### Demo Video
-A 3-minute walkthrough of the extension in action: [ADD_UNLISTED_YOUTUBE_OR_VIMEO_LINK_HERE]
+A 5-minute recorded demo can be found using this link: https://www.loom.com/share/f40e6a858c684b91973baff2f7c30e11
 
 ### Screenshots
 
