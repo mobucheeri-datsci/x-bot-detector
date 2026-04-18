@@ -236,16 +236,13 @@ A 3-minute walkthrough of the extension in action: [ADD_UNLISTED_YOUTUBE_OR_VIME
 
 ### Screenshots
 Profile panel on an X user profile, with per-feature contributions:
-
-
+<img width="567" alt="Profile panel on an X user profile with per-feature contributions" src="https://git.generalassemb.ly/user-attachments/assets/83e0c411-42c4-4aea-8a21-0e34aa7eddf2" />
 
 Toolbar popup with the same breakdown:
-
-
+<img width="405" alt="Toolbar popup showing the bot score and contribution breakdown" src="https://git.generalassemb.ly/user-attachments/assets/6c718bb6-6ebc-41d7-bb51-62786b917012" />
 
 Thread analysis showing hover cards on reply accounts and the coordinated inauthentic behaviour clustering:
-
-
+<img width="720" alt="Thread analysis with hover cards on reply accounts and a coordinated inauthentic behaviour cluster highlighted" src="https://git.generalassemb.ly/user-attachments/assets/7433df7f-07f5-4599-87dd-59bd5cab9206" />
 
 ## License and Acknowledgments
 ### License
