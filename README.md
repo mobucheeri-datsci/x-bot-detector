@@ -32,8 +32,6 @@ Raw fields:
 | average_tweets_per_day | float64 | Mean tweets per day |
 | account_type | object | Target label: `human` or `bot` |
 
-The dataset covers 2018 to 2020 and predates modern LLM-driven bot accounts. That is a real limitation for current-day performance and is discussed in the Limitations section.
-
 ## Model Architecture and Training Pipeline
 ### Feature Engineering
 
@@ -88,11 +86,11 @@ The test set is 5,616 users which were held out before any modelling. Thresholds
 XGBoost wins on F1 and accuracy. BiGRU-LSTM edges it on recall but drops on precision, so it catches slightly more bots at the cost of flagging more humans. Training time spans three orders of magnitude (1 second for XGBoost against 829 seconds for BiGRU-LSTM) with no accuracy return on the extra compute. The top features by gain are `verified` (0.20), `followers_count` (0.11), `is_established_account` (0.10), and `log_followers_count` (0.07). Full charts, ROC curves, confusion matrices, and training loss are in `notebooks/analysis.ipynb`.
 
 ### Post-Deployment Benchmark on 50 Verified Organisations
-The airt-ml dataset does not flag organisation accounts separately from regular human accounts, which makes orgs a blind spot the standard test set cannot catch. Early live testing of the extension confirmed the concern, where CNN scored 92/100 and Al Jazeera scored 84/100, which signalled that they were bot accounts when that is not the case.
+The airt-ml dataset does not flag organisation accounts separately from regular human accounts, which makes orgs something that the test set cannot detect. Early live testing of the extension confirmed the concern, where CNN scored 92/100 and Al Jazeera scored 84/100, which signalled that they were bot accounts when that is not the case.
 
 I built a custom benchmark of 50 verified organisation accounts (15 news, 10 tech, 10 retail, 8 sports, 7 NGOs and government) to find the cause of the false flagging of accounts like CNN and Al Jazeera. If the model was broken, benchmark scores would match the live extension. If the model was fine, the bug had to be in the extension.
 
-Given complete metadata, the model scores all 50 organisations as HUMAN, with no org scoring above 50/100. A secondary news-organisation override in the extension only shifts the score on 2 accounts (NFL, F1), and neither shift flips the classification. The benchmark clears the model and points at the DOM scraping path in `content.js` as the actual source of the live CNN and Al Jazeera errors. That is the next item in Future Work.
+Given complete metadata, the model scores all 50 organisations as HUMAN, with no org scoring above 50/100. A secondary news-organisation override in the extension only shifts the score on 2 accounts (NFL, F1), and neither shift flips the classification. The benchmark clears the model and points at the DOM scraping path in `content.js` as the actual source of the live CNN and Al Jazeera errors.
 
 ### External Validation on MGTAB
 MGTAB (Liu et al., 2023, arXiv:2301.01123) is a published bot detection dataset with 10,199 expert-annotated users and 788 pre-extracted features per user. I trained the same XGBoost architecture on MGTAB's features to see how the approach transfers.
@@ -239,15 +237,15 @@ A 3-minute walkthrough of the extension in action: [ADD_UNLISTED_YOUTUBE_OR_VIME
 ### Screenshots
 Profile panel on an X user profile, with per-feature contributions:
 
-![Profile panel](assets/figures/profile_panel.png)
+
 
 Toolbar popup with the same breakdown:
 
-![Popup](assets/figures/popup.png)
+
 
 Thread analysis showing hover cards on reply accounts and the coordinated inauthentic behaviour clustering:
 
-![Thread analysis](assets/figures/thread_analysis.png)
+
 
 ## License and Acknowledgments
 ### License
