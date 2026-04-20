@@ -9,6 +9,8 @@ Automated accounts make up a large and growing share of activity on social media
 
 Existing bot detection tools either need academic API access, live on a separate website, or sit behind a paid subscription. None of them run inside the browser where the user already is. This project fills that gap, which is building a bot detection model that only uses profile features a browser can see, deployed as a Chrome extension that scores any profile and comment thread in real time with a readable explanation of why.
 
+The extension works in two places on X. On any profile page, it shows a full panel with the score, the colour bar, and the top feature contributions. On a tweet detail page with a comment thread, it scores every reply in the thread, flags each reply with a coloured dot next to the username, and shows an aggregate summary of how many of the replies look human, uncertain, or bot.
+
 ## Dataset
 `twitter_human_bots.csv` from airt-ml (2023), hosted on Hugging Face under CC BY-SA 3.0. 37,438 X accounts labelled as `human` (25,013) or `bot` (12,425), giving a 2:1 class imbalance. The dataset downloads automatically on first run via the `datasets` library.
 
@@ -210,6 +212,8 @@ The dataset is from 2018 to 2020 and contains no modern LLM-driven bot accounts.
 The deployed model only sees profile-level features. It cannot use the social graph or a full tweet history, both of which are known to help. Graph-based models on MGTAB reach 0.86 to 0.89 F1 partly because they have access to the relational graph.
 
 The Sentence-BERT bio embedding ablation regressed against the baseline (see Evaluation). Improving bio-text modelling for short or empty bios is an open question.
+
+Per-reply scoring in threads is approximate. The reply DOM on X exposes only username, display name, and verified status, while the model expects all 37 features. The other 34 are filled with default values, so the individual reply dots are rougher than the full-panel profile scores. The aggregate thread summary (how many replies look human, uncertain, or bot overall) is the more reliable output on thread pages.
 
 The live extension's only observed misclassifications (Al Jazeera at 84/100, CNN at 92/100) trace to incomplete DOM scraping in `content.js`, not to the model itself.
 
