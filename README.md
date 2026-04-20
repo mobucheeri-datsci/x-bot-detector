@@ -1,5 +1,5 @@
 # X Bot Detector
-A Chrome extension that scores any X profile and comment thread for bot likelihood in real time, backed by an XGBoost model trained on 37,438 labelled accounts.
+A Chrome extension that scores any X profile and tweet thread for bot likelihood in real time, backed by an XGBoost model trained on 37,438 labelled accounts.
 
 Author: Mohamed Bucheeri
 Date: April 17 2026
