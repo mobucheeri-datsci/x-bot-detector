@@ -9,7 +9,7 @@ Automated accounts make up a large and growing share of activity on social media
 
 Existing bot detection tools either need academic API access, live on a separate website, or sit behind a paid subscription. None of them run inside the browser where the user already is. This project fills that gap, which is building a bot detection model that only uses profile features a browser can see, deployed as a Chrome extension that scores any profile and comment thread in real time with a readable explanation of why.
 
-The extension works in two places on X. On any profile page, it shows a full panel with the score, the colour bar, and the top feature contributions. On a tweet detail page with a comment thread, it scores every reply in the thread, flags each reply with a coloured dot next to the username, and shows an aggregate summary of how many of the replies look human, uncertain, or bot.
+The extension works in two places on X. On any profile page, it shows a full panel with the score, the colour bar, and the top feature contributions from the 37-feature XGBoost model. On a tweet detail page with a comment thread, it scans every visible reply and flags each one as typical, possibly suspicious, or suspicious based on username patterns. Digit-heavy handles, long trailing digit sequences, and auto-generated name patterns all contribute, while verified accounts are always marked typical. Flagged replies show a coloured dot next to the username and a coloured left-border on the reply itself. A panel in the bottom-right tracks the counts and lets the user jump between flagged replies to investigate them. The panel also opens a full report with a table of flagged accounts and the most common flagging reasons in the thread.
 
 ## Dataset
 `twitter_human_bots.csv` from airt-ml (2023), hosted on Hugging Face under CC BY-SA 3.0. 37,438 X accounts labelled as `human` (25,013) or `bot` (12,425), giving a 2:1 class imbalance. The dataset downloads automatically on first run via the `datasets` library.
@@ -63,7 +63,7 @@ The account-type signals category (`bio_has_news_keywords`, `bio_has_org_keyword
 6. Train BiGRU-LSTM, CNN-BiLSTM, and XGBoost with class-weighted loss to handle the 2:1 imbalance.
 7. Tune the decision threshold per model on the validation set.
 8. Evaluate on the held-out test set using F1, accuracy, precision, recall, ROC-AUC, and PR-AUC.
-9. Save the best model by F1 and wire it into a FastAPI backend with `/predict` and `/predict_batch` endpoints.
+9. Save the best model by F1 and wire it into a FastAPI backend with `/predict`, `/predict_batch`, and `/predict_thread_batch` endpoints.
 10. Validate externally on MGTAB using the same XGBoost architecture.
 
 ### Models
@@ -120,14 +120,14 @@ The fused model regressed by 0.0025 F1 against the baseline. The dataset explain
 ## How to Run
 ### Quick install (just the extension)
 The backend is deployed at `https://mobucheeri-x-bot-detector.hf.space`. The extension calls this endpoint, so no local setup is needed.
-1. Once the extension is approved on the Chrome Web Store, install it from there.
+1. The extension is pending review on the Chrome Web Store. Once approved, it will be installable from there directly.
 2. In the meantime, to install manually:
    - Clone the repo.
    - Open `chrome://extensions` in Chrome.
    - Turn on Developer mode.
    - Click Load unpacked and select the `extension/` folder.
 
-Visit any profile on `x.com` to see the scoring panel. Visit any tweet thread to see per-reply scoring.
+Visit any profile on `x.com` to see the scoring panel. Visit any tweet thread to see per-reply heuristic flagging.
 
 ### Development setup
 To retrain the models, run the evaluations, or reproduce any of the work in this repo:
@@ -182,11 +182,11 @@ uvicorn api.app:app --reload --port 8000
 Then change `apiBase` in `extension/background/service-worker.js` from the Hugging Face URL to `http://localhost:8000` before loading the extension.
 
 ## Repo Structure
-
 ```
 twitter-bot-detector/
 ├── README.md
 ├── requirements.txt
+├── Dockerfile
 ├── .gitignore
 ├── data/
 │   ├── raw/twitter_human_bots.csv
@@ -206,58 +206,61 @@ twitter-bot-detector/
 │   ├── content/
 │   ├── popup/
 │   ├── background/
+│   ├── report/
 │   └── icons/
+├── X Bot Detection_ Presentation.pdf
 └── notebooks/analysis.ipynb
 ```
 
 ## Limitations and Future Work
 
 ### Limitations
-The dataset is from 2018 to 2020 and contains no modern LLM-driven bot accounts. Performance on current-day ChatGPT-style bots is an open question.
+The training data is from 2018 to 2020, so the model has never seen modern LLM-generated bots. Bio patterns the model relies on (19% empty, median 53 characters) may not hold for bots with convincing AI-written bios.
 
-The deployed model only sees profile-level features. It cannot use the social graph or a full tweet history, both of which are known to help. Graph-based models on MGTAB reach 0.86 to 0.89 F1 partly because they have access to the relational graph.
+The deployed model only reads profile-level features. It has no access to the social graph or to tweet history. The external validation done showed that graph-based models on MGTAB reach F1 of 0.86 to 0.89 against 0.84 for a feature-only XGBoost.
 
-The Sentence-BERT bio embedding ablation regressed against the baseline (see Evaluation). Improving bio-text modelling for short or empty bios is an open question.
+Thread reply scoring does not use the full XGBoost model. The reply DOM only exposes username, display name, and verification status, so the scanner falls back to username pattern matching (digit-heavy handles, trailing digit sequences, auto-generated patterns). The full profile panel remains the reliable model-backed score.
 
-Per-reply scoring in threads is approximate. The reply DOM on X exposes only username, display name, and verified status, while the model expects all 37 features. The other 34 are filled with default values, so the individual reply dots are rougher than the full-panel profile scores. The aggregate thread summary (how many replies look human, uncertain, or bot overall) is the more reliable output on thread pages.
+The Sentence-BERT bio embedding ablation regressed against the baseline. Improving bio-text modelling for short or empty bios is an open question.
 
-The live extension's only observed misclassifications (Al Jazeera at 84/100, CNN at 92/100) trace to incomplete DOM scraping in `content.js`, not to the model itself.
+Live extension errors on the profile panel (Al Jazeera at 84, CNN at 92) trace to incomplete DOM scraping in `content.js`, not to the model.
 
 ### Ethical Considerations
-The training labels were collected on English X content from 2018 to 2020. Non-English accounts and accounts from underrepresented regions are likely underrepresented in the labels. Nothing in this project tests for fairness across demographic or language dimensions, and a live deployment would need a fairness audit.
+Training labels came from English X content in 2018 to 2020, so non-English and underrepresented-region accounts are likely underrepresented. A live deployment would need a fairness audit.
 
-The `verified` feature is the model's strongest predictor of HUMAN. In 2018 to 2020 verification was a public-figure and institution badge, but after 2022 it became a paid subscription feature on X. A paid-verified modern bot would trigger the same HUMAN signal the model learned to trust.
+The `verified` feature is the model's strongest HUMAN predictor. Verification was a public-figure badge in 2018 to 2020 but is now a paid subscription, so a paid-verified modern bot can trigger the same signal.
 
-Inference runs on a Hugging Face Space at `https://mobucheeri-x-bot-detector.hf.space`. The Chrome extension sends profile metadata over HTTPS to this endpoint and the endpoint returns a score and an explanation. The backend does not log or store any data. The source code for the backend is public, and users can also run it locally for full privacy.
+Inference runs on a public Hugging Face Space. The backend does not log or store data, and the source is open so users can run it locally.
 
-Wrongly labelling a real user as a bot is more costly than missing a bot, so the system is biased toward fewer false positives. Each model's decision threshold is tuned for F1 instead of accuracy, the extension returns UNCERTAIN when the score sits within 0.10 of the threshold, and the deployed XGBoost has the lowest false-positive count of the three models trained.
+False positives are costlier than false negatives, so the system is biased toward fewer false positives. Thresholds are tuned on F1 instead of accuracy, the profile panel returns UNCERTAIN within 0.10 of the threshold, and the thread scanner defaults to typical when no clear bot signals appear.
 
 ### Future Work
-1. Scraper fixes for the live extension. Recovering follower count and account age from X's hover cards would resolve the Al Jazeera and CNN errors.
+1. Scraper fixes to recover follower count and account age from hover cards. This would resolve the Al Jazeera and CNN errors and let the thread scanner run the full model.
 2. Tweet content features. The current dataset has bios but no tweet histories.
-3. Graph neural networks. GNNs sit a few F1 points above feature-only models on TwiBot-22 (Feng et al., 2022) and MGTAB, but the graph data is not available to a browser extension at inference time.
-4. Temporal behavioural signals from visible tweet timestamps on a profile page.
-5. Cross-platform generalisation to Instagram, Threads, Reddit, or YouTube.
-6. Find and test more recent datasets that would more likely record LLM-driven bot behaviours across the features.
+3. Graph neural networks. Not usable at browser-side inference but worth exploring for a server-side variant.
+4. Temporal behavioural signals from visible tweet timestamps.
+5. Cross-platform support for Instagram, Threads, Reddit, YouTube.
+6. More recent datasets that include LLM-driven bot behaviour.
 
 ## Screenshots and Demo
 ### Demo Video
 A 5-minute recorded demo can be found using this link: https://www.loom.com/share/f40e6a858c684b91973baff2f7c30e11
 
 ### Screenshots
-
-Profile panel on an X user profile, with per-feature contributions:
-
-<img width="567" alt="Profile panel on an X user profile with per-feature contributions" src="https://git.generalassemb.ly/user-attachments/assets/83e0c411-42c4-4aea-8a21-0e34aa7eddf2" />
+Profile panel on an X user profile, with per-feature contributions in percentages and the news-organisation override applied:
+<img width="1512" height="859" alt="Profile panel on CNN's profile showing 30 out of 100 HUMAN with per-feature contributions as percentages" src="https://git.generalassemb.ly/user-attachments/assets/acaa9bda-8d9f-4a9a-a461-71df1c1dbcd5" />
 
 Toolbar popup with the same breakdown:
+<img width="386" height="584" alt="Toolbar popup showing CNN's bot score and percentage contribution breakdown" src="https://git.generalassemb.ly/user-attachments/assets/839f90a3-fda8-4f97-8385-7b245a7b0ac3" />
 
-<img width="405" alt="Toolbar popup showing the bot score and contribution breakdown" src="https://git.generalassemb.ly/user-attachments/assets/6c718bb6-6ebc-41d7-bb51-62786b917012" />
+Thread scan on a busy reply section, with coloured dots next to flagged usernames, coloured left-borders on flagged replies, and a sticky summary panel at the bottom right:
+<img width="1512" height="864" alt="Thread scan with dots next to reply usernames, red and orange left-borders on flagged replies, and a summary panel" src="https://git.generalassemb.ly/user-attachments/assets/6609d69e-015b-43cd-b410-4a489e37abfc" />
 
-Thread analysis showing hover cards on reply accounts and the coordinated inauthentic behaviour clustering:
+Full report view, opened in a new tab from the thread panel, with flag distribution, most common reasons, and a table of flagged accounts:
+<img width="1511" height="861" alt="Full thread scan report showing 21 typical, 2 possibly suspicious, 6 suspicious, a flag distribution chart, common flagging reasons, and a filterable table of flagged handles" src="https://git.generalassemb.ly/user-attachments/assets/dd0ec929-f25b-4897-829b-11e70e4c6e26" />
 
-<img width="720" alt="Thread analysis with hover cards on reply accounts and a coordinated inauthentic behaviour cluster highlighted" src="https://git.generalassemb.ly/user-attachments/assets/7433df7f-07f5-4599-87dd-59bd5cab9206" />
-
+Toolbar popup on a thread page, summarising the scan for all replies:
+<img width="1512" height="865" alt="Toolbar popup on a thread page summarising total replies scanned and counts per flag category" src="https://git.generalassemb.ly/user-attachments/assets/3fe4de36-5ab3-4e9c-8ed1-8757a4ae9cfd" />
 
 ## License and Acknowledgments
 ### License
