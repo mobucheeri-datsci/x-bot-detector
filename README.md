@@ -247,13 +247,13 @@ False positives are costlier than false negatives, so the system is biased towar
 A 5-minute recorded demo can be found using this link: https://www.loom.com/share/f40e6a858c684b91973baff2f7c30e11
 
 ### Screenshots
-Profile panel on an X user profile, with per-feature contributions in percentages and the news-organisation override applied:
-<img width="1512" height="859" alt="Profile panel on CNN's profile showing 30 out of 100 HUMAN with per-feature contributions as percentages" src="https://git.generalassemb.ly/user-attachments/assets/acaa9bda-8d9f-4a9a-a461-71df1c1dbcd5" />
+Profile panel on an X user profile, with per-feature contributions in percentages:
+<p><img width="720" alt="Profile panel on CNN's profile showing 30 out of 100 HUMAN with per-feature contributions as percentages" src="https://git.generalassemb.ly/user-attachments/assets/acaa9bda-8d9f-4a9a-a461-71df1c1dbcd5" /></p>
 
 Toolbar popup with the same breakdown:
 <img width="386" height="584" alt="Toolbar popup showing CNN's bot score and percentage contribution breakdown" src="https://git.generalassemb.ly/user-attachments/assets/839f90a3-fda8-4f97-8385-7b245a7b0ac3" />
 
-Thread scan on a busy reply section, with coloured dots next to flagged usernames, coloured left-borders on flagged replies, and a sticky summary panel at the bottom right:
+Thread scan on a busy reply section, with coloured dots next to flagged usernames, coloured left-borders on flagged replies, and a summary panel on the bottom right:
 <img width="1512" height="864" alt="Thread scan with dots next to reply usernames, red and orange left-borders on flagged replies, and a summary panel" src="https://git.generalassemb.ly/user-attachments/assets/6609d69e-015b-43cd-b410-4a489e37abfc" />
 
 Full report view, opened in a new tab from the thread panel, with flag distribution, most common reasons, and a table of flagged accounts:
