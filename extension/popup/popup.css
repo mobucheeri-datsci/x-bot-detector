@@ -425,9 +425,9 @@ body::-webkit-scrollbar-thumb:hover {
   margin-bottom: 8px;
 }
 
-.thread-bar-human { background: #34C759; }
-.thread-bar-uncertain { background: #FF9500; }
-.thread-bar-bot { background: #FF3B30; }
+.thread-bar-typical { background: #34C759; }
+.thread-bar-possibly { background: #FF9500; }
+.thread-bar-suspicious { background: #FF3B30; }
 
 .thread-legend {
   display: flex;
@@ -438,9 +438,9 @@ body::-webkit-scrollbar-thumb:hover {
 
 .thread-stat { color: #8E8E93; }
 .thread-stat b { color: #fff; font-weight: 700; }
-.thread-stat-human b { color: #34C759; }
-.thread-stat-uncertain b { color: #FF9500; }
-.thread-stat-bot b { color: #FF3B30; }
+.thread-stat-typical b { color: #34C759; }
+.thread-stat-possibly b { color: #FF9500; }
+.thread-stat-suspicious b { color: #FF3B30; }
 
 .thread-section-label {
   font-size: 11px;

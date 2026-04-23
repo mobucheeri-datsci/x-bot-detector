@@ -1,9 +1,7 @@
 (function () {
   "use strict";
-
   let lastUrl = "";
   let latestResult = null;
-
   const observer = new MutationObserver(() => {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
@@ -187,15 +185,13 @@
     if (!entries || entries.length === 0) {
       return `<div class="botdetect-empty">no strong signals</div>`;
     }
-    const max = Math.max(...entries.map((e) => Math.abs(e.contribution)), 0.5);
     return entries.map((e) => {
-      const pct = Math.round((Math.abs(e.contribution) / max) * 100);
-      const sign = e.contribution >= 0 ? "+" : "";
+      const pct = Math.round(e.percentage || 0);
       return `
         <div class="botdetect-bar-row">
           <div class="botdetect-bar-text">
             <span class="botdetect-bar-desc">${escapeHtml(e.description || e.feature)}</span>
-            <span class="botdetect-bar-mag">${sign}${e.contribution.toFixed(2)}</span>
+            <span class="botdetect-bar-mag">${pct}%</span>
           </div>
           <div class="botdetect-bar-track">
             <div class="botdetect-bar-fill botdetect-bar-${direction}" style="width:${pct}%"></div>
@@ -209,22 +205,18 @@
   function injectRichPanel(data) {
     const existing = document.getElementById("botdetect-panel");
     if (existing) existing.remove();
-
     const score = data.bot_score;
     const label = data.label;
     const color = labelColors[label] || "#8E8E93";
     const threshold = typeof data.threshold === "number" ? data.threshold : 0.58;
     const margin = typeof data.margin === "number" ? data.margin : 0.1;
-
     const overrideHtml = data.override_applied === "news_org"
       ? `<div class="botdetect-override">
           <div class="botdetect-override-title">News organisation override</div>
           <div class="botdetect-override-body">Verified, established, large-following organisation. Score capped to keep this account human.</div>
         </div>`
       : "";
-
     const contribs = data.contributions || { toward_bot: [], toward_human: [] };
-
     const panel = document.createElement("div");
     panel.id = "botdetect-panel";
     panel.className = "botdetect-panel";

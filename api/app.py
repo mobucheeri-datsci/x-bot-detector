@@ -200,6 +200,7 @@ def compute_contributions(numeric_arr, raw_numeric):
     contribs = booster.predict(dmatrix, pred_contribs=True)[0]
     feat_contribs = contribs[:-1]
     indexed = sorted(enumerate(feat_contribs), key=lambda x: abs(x[1]), reverse=True)
+    total_abs = sum(abs(c) for _, c in indexed if abs(c) >= 0.01)
     toward_bot, toward_human = [], []
     for idx, contrib in indexed:
         if abs(contrib) < 0.01:
@@ -212,6 +213,7 @@ def compute_contributions(numeric_arr, raw_numeric):
             "description": feature_descriptions.get(name, name.replace("_", " ")),
             "value": format_feature_value(name, float(raw_numeric[idx])),
             "contribution": round(float(contrib), 3),
+            "percentage": round(float(abs(contrib) / max(total_abs, 0.001)) * 100, 1),
         }
         if contrib > 0 and len(toward_bot) < 4:
             toward_bot.append(entry)
@@ -245,15 +247,12 @@ def generate_signals(profile, score):
 
 def predict(profile):
     load_model()
-
     raw_numeric = extract_numeric(profile)
     numeric_arr = np.array(raw_numeric, dtype=np.float32)
     if _numeric_mean is not None and _numeric_std is not None:
         numeric_arr = (numeric_arr - _numeric_mean) / _numeric_std
-
     name = _model_info["model_name"]
     model_type = _model_info.get("model_type", "neural")
-
     if model_type == "xgboost":
         bot_prob = float(_model.predict_proba(numeric_arr.reshape(1, -1))[0, 1])
     else:
@@ -263,7 +262,6 @@ def predict(profile):
             tokens = _tokenizer.tokenize_batch([text], max_len=max_seq_len).to(device)
             logits = _model(input_ids=tokens, numeric=numeric)
             bot_prob = torch.sigmoid(logits.squeeze()).item()
-
     raw_followers, raw_age = raw_numeric[0], raw_numeric[4]
     raw_verified, raw_likely_org = raw_numeric[16], raw_numeric[35]
     override_applied = None
@@ -272,9 +270,7 @@ def predict(profile):
         if bot_prob > capped:
             override_applied = "news_org"
         bot_prob = min(bot_prob, capped)
-
     score = int(round(bot_prob * 100))
-
     margin = 0.18 if raw_age < 60 else 0.1
     delta = bot_prob - _threshold
     if abs(delta) <= margin:
@@ -323,13 +319,12 @@ class PredictResponse(BaseModel):
     margin: float = 0.1
 
 app = FastAPI(title="Twitter Bot Detector API", version="1.0.0")
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origin_regex=r"^(https://(x|twitter)\.com|chrome-extension://.*)$",
+    allow_credentials=False,
+    allow_methods=["POST", "GET"],
+    allow_headers=["Content-Type"],
 )
 
 @app.on_event("startup")
@@ -341,7 +336,6 @@ async def startup():
         print("[!] No model found, train first with: python src/train.py")
     except Exception as e:
         print(f"[!] Model load failed: {e}")
-
 
 @app.post("/predict", response_model=PredictResponse)
 async def predict_endpoint(request: PredictRequest):
@@ -369,6 +363,61 @@ async def predict_batch_endpoint(request: BatchRequest):
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+class ThreadReplyRequest(BaseModel):
+    username: str
+    display_name: str = ""
+    is_verified: bool = False
+class ThreadReplyResponse(BaseModel):
+    username: str
+    flag: str
+    reasons: list[str]
+class ThreadReplyBatchRequest(BaseModel):
+    replies: list[ThreadReplyRequest]
+class ThreadReplyBatchResponse(BaseModel):
+    results: list[ThreadReplyResponse]
+def score_thread_reply(profile):
+    username = profile.get("username", "")
+    is_verified = profile.get("is_verified", False)
+    if is_verified:
+        return {
+            "username": username,
+            "flag": "typical",
+            "reasons": ["verified account"],
+        }
+    signals = 0
+    reasons = []
+    digits = sum(c.isdigit() for c in username)
+    if digits >= 5:
+        signals += 2
+        reasons.append(f"username contains {digits} digits")
+    elif digits >= 3:
+        signals += 1
+        reasons.append(f"username contains {digits} digits")
+    if re.search(r"\d{4,}$", username):
+        signals += 1
+        reasons.append("username ends in long digit sequence")
+    if len(username) >= 12 and digits / max(len(username), 1) > 0.3:
+        signals += 1
+        reasons.append("handle is mostly digits")
+    if re.match(r"^[a-z]+\d+$", username.lower()):
+        signals += 1
+        reasons.append("handle follows auto-generated pattern")
+    if signals >= 3:
+        flag = "suspicious"
+    elif signals >= 1:
+        flag = "possibly_suspicious"
+    else:
+        flag = "typical"
+        reasons = ["no obvious red flags in visible info"]
+    return {"username": username, "flag": flag, "reasons": reasons}
+
+@app.post("/predict_thread_batch", response_model=ThreadReplyBatchResponse)
+async def predict_thread_batch_endpoint(request: ThreadReplyBatchRequest):
+    if len(request.replies) > 100:
+        raise HTTPException(status_code=429, detail="batch limit is 100 replies")
+    results = [ThreadReplyResponse(**score_thread_reply(r.model_dump())) for r in request.replies]
+    return ThreadReplyBatchResponse(results=results)
 
 @app.get("/health")
 async def health():

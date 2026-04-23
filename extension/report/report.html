@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Thread Scan Report</title>
+  <link rel="stylesheet" href="report.css">
+</head>
+<body>
+  <div class="report-container">
+    <div class="report-header">
+      <div class="report-brand">Thread Scan Report</div>
+      <div class="report-source" id="report-source"></div>
+      <div class="report-timestamp" id="report-timestamp"></div>
+    </div>
+
+    <div class="report-summary">
+      <div class="report-stat report-stat-typical">
+        <div class="report-stat-num" id="stat-typical">0</div>
+        <div class="report-stat-label">typical</div>
+      </div>
+      <div class="report-stat report-stat-possibly">
+        <div class="report-stat-num" id="stat-possibly">0</div>
+        <div class="report-stat-label">possibly suspicious</div>
+      </div>
+      <div class="report-stat report-stat-suspicious">
+        <div class="report-stat-num" id="stat-suspicious">0</div>
+        <div class="report-stat-label">suspicious</div>
+      </div>
+      <div class="report-stat report-stat-total">
+        <div class="report-stat-num" id="stat-total">0</div>
+        <div class="report-stat-label">total scanned</div>
+      </div>
+    </div>
+
+    <div class="report-chart-wrap">
+      <div class="report-section-title">Flag distribution</div>
+      <div class="report-chart" id="chart"></div>
+    </div>
+
+    <div class="report-reasons-wrap">
+      <div class="report-section-title">Most common reasons</div>
+      <div class="report-reasons" id="reasons"></div>
+    </div>
+
+    <div class="report-table-wrap">
+      <div class="report-section-title">Flagged accounts</div>
+      <div class="report-table-controls">
+        <button class="report-filter-btn active" data-filter="all">All flagged</button>
+        <button class="report-filter-btn" data-filter="suspicious">Suspicious only</button>
+        <button class="report-filter-btn" data-filter="possibly_suspicious">Possibly suspicious only</button>
+      </div>
+      <table class="report-table" id="report-table">
+        <thead>
+          <tr>
+            <th>Handle</th>
+            <th>Flag</th>
+            <th>Reasons</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="report-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="report.js"></script>
+</body>
+</html>

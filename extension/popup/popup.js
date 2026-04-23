@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const result = document.getElementById("result");
   const threadMode = document.getElementById("thread-mode");
   const error = document.getElementById("error");
-
   const isFullView = new URLSearchParams(location.search).get("fullview") === "1";
   if (isFullView) {
     document.body.classList.add("fullview");
@@ -19,7 +18,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     return;
   }
-
   document.getElementById("open-fullview").addEventListener("click", () => {
     chrome.tabs.create({ url: chrome.runtime.getURL("popup/popup.html?fullview=1") });
   });
@@ -29,7 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabId = tabs[0]?.id;
     const threadMatch = url.match(/https?:\/\/(?:x\.com|twitter\.com)\/[A-Za-z0-9_]+\/status\/\d+/);
     const profileMatch = url.match(/https?:\/\/(x\.com|twitter\.com)\/([A-Za-z0-9_]+)\/?$/);
-
     if (threadMatch) {
       notTwitter.style.display = "none";
       loading.style.display = "block";
@@ -47,12 +44,10 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       return;
     }
-
     if (!profileMatch) {
       notTwitter.style.display = "block";
       return;
     }
-
     const username = profileMatch[2];
     const reserved = [
       "home", "explore", "search", "notifications", "messages",
@@ -62,13 +57,10 @@ document.addEventListener("DOMContentLoaded", () => {
       notTwitter.style.display = "block";
       return;
     }
-
     notTwitter.style.display = "none";
     loading.style.display = "block";
-
     chrome.tabs.sendMessage(tabId, { type: "GET_RESULT" }, (response) => {
       loading.style.display = "none";
-
       if (chrome.runtime.lastError || !response) {
         chrome.runtime.sendMessage(
           { type: "PREDICT", profile: { username, display_name: username } },
@@ -76,7 +68,6 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         return;
       }
-
       handleResponse(response);
     });
   });
@@ -85,69 +76,52 @@ document.addEventListener("DOMContentLoaded", () => {
     threadMode.style.display = "block";
     document.getElementById("thread-counts").innerHTML = `
       <div class="thread-error">
-        <div class="thread-error-title">Thread analyser not loaded</div>
+        <div class="thread-error-title">Thread scanner not loaded</div>
         <div class="thread-error-body">
           ${reason ? "(" + reason + ")" : ""}
           <br>
           1. Open <code>chrome://extensions</code><br>
-          2. Click reload on Twitter Bot Detector<br>
+          2. Click reload on X Bot Detector<br>
           3. Refresh this X tab<br>
           4. Check the page console for [bot-detector] logs
         </div>
       </div>
     `;
-    document.getElementById("thread-clusters").innerHTML = "";
   }
 
   function showThreadEmpty() {
     threadMode.style.display = "block";
     document.getElementById("thread-counts").innerHTML = `
-      <div class="thread-empty">Thread analyser is loaded but no replies have been scored yet. Scroll the thread to load replies, wait a few seconds, then reopen this popup.</div>
+     <div class="thread-empty">Thread scanner is loaded but no replies have been scored yet. Scroll the thread to load replies, wait a few seconds, then reopen this popup.</div>
     `;
   }
 
   function showThreadMode(data) {
     threadMode.style.display = "block";
-    const total = (data.totals?.human || 0) + (data.totals?.uncertain || 0) + (data.totals?.bot || 0);
+    const t = data.totals?.typical || 0;
+    const p = data.totals?.possibly_suspicious || 0;
+    const s = data.totals?.suspicious || 0;
+    const total = t + p + s;
     if (total === 0) {
       showThreadEmpty();
       return;
     }
-    const h = data.totals.human || 0;
-    const u = data.totals.uncertain || 0;
-    const b = data.totals.bot || 0;
-    const hPct = Math.round((h / total) * 100);
-    const uPct = Math.round((u / total) * 100);
-    const bPct = Math.round((b / total) * 100);
+    const tPct = Math.round((t / total) * 100);
+    const pPct = Math.round((p / total) * 100);
+    const sPct = Math.round((s / total) * 100);
     document.getElementById("thread-counts").innerHTML = `
-      <div class="thread-total">${total} replies analysed</div>
+      <div class="thread-total">${total} replies scanned</div>
       <div class="thread-bar">
-        <div class="thread-bar-human" style="width:${hPct}%"></div>
-        <div class="thread-bar-uncertain" style="width:${uPct}%"></div>
-        <div class="thread-bar-bot" style="width:${bPct}%"></div>
-      </div>
+        <div class="thread-bar-typical" style="width:${tPct}%"></div>
+        <div class="thread-bar-possibly" style="width:${pPct}%"></div>
+        <div class="thread-bar-suspicious" style="width:${sPct}%"></div>
+       </div>
       <div class="thread-legend">
-        <span class="thread-stat thread-stat-human"><b>${h}</b> human</span>
-        <span class="thread-stat thread-stat-uncertain"><b>${u}</b> unclear</span>
-        <span class="thread-stat thread-stat-bot"><b>${b}</b> bot</span>
+        <span class="thread-stat thread-stat-typical"><b>${t}</b> typical</span>
+        <span class="thread-stat thread-stat-possibly"><b>${p}</b> possibly</span>
+        <span class="thread-stat thread-stat-suspicious"><b>${s}</b> suspicious</span>
       </div>
     `;
-    const clusters = data.clusters || [];
-    const clusterEl = document.getElementById("thread-clusters");
-    if (clusters.length === 0) {
-      clusterEl.innerHTML = `<div class="thread-empty">No suspicious clusters detected.</div>`;
-    } else {
-      clusterEl.innerHTML = clusters.slice(0, 3).map((c) => {
-        const handles = c.handles.slice(0, 4).map((h) => "@" + h).join(", ");
-        const more = c.handles.length > 4 ? " +" + (c.handles.length - 4) : "";
-        return `
-          <div class="thread-cluster">
-            <div class="thread-cluster-title">cluster of ${c.size}, median score ${c.median_score}</div>
-            <div class="thread-cluster-handles">${handles}${more}</div>
-          </div>
-        `;
-      }).join("");
-    }
   }
 
   function handleResponse(response) {
@@ -168,34 +142,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function showResult(data) {
     result.style.display = "block";
-
     const score = data.bot_score;
     const label = data.label;
     const colors = { human: "#34C759", uncertain: "#FF9500", bot: "#FF3B30" };
     const labelText = { human: "HUMAN", uncertain: "UNCERTAIN", bot: "BOT" };
     const color = colors[label] || "#8E8E93";
-
     const scoreEl = document.getElementById("score-number");
     scoreEl.textContent = score;
     scoreEl.style.color = color;
-
     const badge = document.getElementById("label-badge");
     badge.textContent = labelText[label] || "--";
     badge.className = `badge ${label}`;
-
     const bar = document.getElementById("score-bar");
     bar.style.backgroundColor = color;
     setTimeout(() => { bar.style.width = `${score}%`; }, 50);
-
     document.getElementById("username-display").textContent = `@${data.username}`;
     document.getElementById("confidence-text").textContent = `Confidence: ${data.confidence}`;
-
     renderLegend(score, data.threshold, data.margin);
     renderOverride(data.override_applied);
-
     const grid = document.getElementById("contrib-grid");
     const signalsList = document.getElementById("signals-list");
-
     if (data.contributions) {
       grid.style.display = "grid";
       signalsList.style.display = "none";
@@ -247,18 +213,16 @@ document.addEventListener("DOMContentLoaded", () => {
       el.appendChild(empty);
       return;
     }
-    const max = Math.max(...entries.map((e) => Math.abs(e.contribution)), 0.5);
     for (const entry of entries) {
       const row = document.createElement("div");
       row.className = "contrib-row";
-      const pct = Math.round((Math.abs(entry.contribution) / max) * 100);
-      const sign = entry.contribution >= 0 ? "+" : "";
+      const pct = Math.round(entry.percentage || 0);
       row.innerHTML = `
         <div class="contrib-text">
           <span class="contrib-desc">${escapeHtml(entry.description || entry.feature)}</span>
-          <span class="contrib-mag">${sign}${entry.contribution.toFixed(2)}</span>
+          <span class="contrib-mag">${pct}%</span>
         </div>
-        <div class="contrib-bar-track">
+         <div class="contrib-bar-track">
           <div class="contrib-bar-fill contrib-bar-${direction}" style="width:${pct}%"></div>
         </div>
         <div class="contrib-value">${escapeHtml(entry.value)}</div>

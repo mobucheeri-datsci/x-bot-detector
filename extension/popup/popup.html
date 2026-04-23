@@ -8,8 +8,7 @@
 </head>
 <body>
   <div class="header">
-    <div class="header-title">Bot Detector</div>
-    <div class="header-sub">Powered by Deep Learning</div>
+    <div class="header-title">X Bot Detector</div>
   </div>
 
   <div id="loading" class="section" style="display:none;">
@@ -17,11 +16,11 @@
   </div>
 
   <div id="not-twitter" class="section">
-    <div class="muted center">Navigate to a Twitter/X profile to analyse.</div>
+    <div class="muted center">Navigate to a profile to analyse.</div>
   </div>
 
   <div id="result" class="section" style="display:none;">
-    <button id="open-fullview" class="open-fullview-btn">open full view in new tab</button>
+    <button id="open-fullview" class="open-fullview-btn">Open in new tab</button>
     <div class="score-container">
       <div id="score-number" class="score-number">--</div>
       <div class="muted">out of 100</div>
@@ -45,7 +44,7 @@
 
     <div id="override-banner" class="override-banner" style="display:none;"></div>
 
-    <div class="signals-label">Why this score</div>
+    <div class="signals-label">Why this score?</div>
     <div id="contrib-grid" class="contrib-grid" style="display:none;">
       <div class="contrib-col">
         <div class="contrib-col-title contrib-col-bot">toward bot</div>
@@ -60,19 +59,12 @@
   </div>
 
   <div id="thread-mode" class="section" style="display:none;">
-    <div class="thread-title">Thread analysis</div>
-    <div id="thread-counts"></div>
-    <div class="divider"></div>
-    <div class="thread-section-label">Suspicious clusters</div>
-    <div id="thread-clusters"></div>
+    <div class="thread-title">Thread scan</div>
+     <div id="thread-counts"></div>
   </div>
 
   <div id="error" class="section" style="display:none;">
     <div class="error-text" id="error-text">Something went wrong.</div>
-  </div>
-
-  <div class="footer">
-    <div class="muted">Mohamed Bucheeri | GA Bahrain 2026</div>
   </div>
 
   <script src="popup.js"></script>

@@ -1,12 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "Twitter Bot Detector",
+  "name": "X Bot Detector",
   "version": "1.0.0",
-  "description": "Detects bot accounts on Twitter/X using deep learning. Shows bot probability scores on profiles.",
+  "description": "Detects bot accounts on X using deep learning. Shows bot probability scores on profiles.",
   "permissions": ["activeTab", "storage"],
   "host_permissions": [
     "https://x.com/*",
-    "https://twitter.com/*"
+    "https://twitter.com/*",
+    "https://mobucheeri-x-bot-detector.hf.space/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["report/report.html", "report/report.css", "report/report.js"],
+      "matches": ["https://x.com/*", "https://twitter.com/*"]
+    }
   ],
   "background": {
     "service_worker": "background/service-worker.js"

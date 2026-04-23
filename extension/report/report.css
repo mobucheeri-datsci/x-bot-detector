@@ -1,0 +1,283 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #0a0b0d;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.report-container {
+  max-width: 960px;
+  margin: 40px auto;
+  padding: 0 24px;
+}
+
+.report-header {
+  margin-bottom: 32px;
+}
+
+.report-brand {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1D9BF0;
+  margin-bottom: 6px;
+}
+
+.report-source {
+  font-size: 13px;
+  color: #8a8e95;
+}
+
+.report-source a {
+  color: #1D9BF0;
+  text-decoration: none;
+}
+
+.report-source a:hover {
+  text-decoration: underline;
+}
+
+.report-timestamp {
+  font-size: 12px;
+  color: #6a6f78;
+  margin-top: 4px;
+}
+
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.report-stat {
+  background: #15171a;
+  border: 1px solid #2C2C2E;
+  border-radius: 10px;
+  padding: 18px 16px;
+  text-align: center;
+}
+
+.report-stat-num {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.report-stat-label {
+  font-size: 11px;
+  color: #8a8e95;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.report-stat-typical .report-stat-num { color: #34C759; }
+.report-stat-possibly .report-stat-num { color: #FF9500; }
+.report-stat-suspicious .report-stat-num { color: #FF3B30; }
+.report-stat-total .report-stat-num { color: #1D9BF0; }
+
+.report-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8a8e95;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.report-chart-wrap {
+  margin-bottom: 32px;
+}
+
+.report-chart {
+  display: flex;
+  height: 40px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #15171a;
+  border: 1px solid #2C2C2E;
+}
+
+.report-chart-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.report-chart-segment:hover {
+  opacity: 0.85;
+}
+
+.report-chart-typical { background: #34C759; }
+.report-chart-possibly { background: #FF9500; }
+.report-chart-suspicious { background: #FF3B30; }
+
+.report-reasons-wrap {
+  margin-bottom: 32px;
+}
+
+.report-reasons {
+  background: #15171a;
+  border: 1px solid #2C2C2E;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.report-reason-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #2C2C2E;
+  font-size: 13px;
+}
+
+.report-reason-row:last-child {
+  border-bottom: none;
+}
+
+.report-reason-text {
+  color: #ddd;
+}
+
+.report-reason-count {
+  color: #8a8e95;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+
+.report-table-wrap {
+  margin-bottom: 40px;
+}
+
+.report-table-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.report-filter-btn {
+  background: #15171a;
+  border: 1px solid #2C2C2E;
+  color: #aaa;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.report-filter-btn:hover {
+  background: #1d1f24;
+  color: #fff;
+}
+
+.report-filter-btn.active {
+  background: #1D9BF0;
+  color: #fff;
+  border-color: #1D9BF0;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #15171a;
+  border: 1px solid #2C2C2E;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.report-table th {
+  background: #1d1f24;
+  color: #8a8e95;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: left;
+  padding: 12px 14px;
+  font-weight: 600;
+  border-bottom: 1px solid #2C2C2E;
+}
+
+.report-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #2C2C2E;
+  font-size: 13px;
+  vertical-align: top;
+}
+
+.report-table tr:last-child td {
+  border-bottom: none;
+}
+
+.report-table tr:hover {
+  background: #1a1c1f;
+}
+
+.report-handle {
+  color: #1D9BF0;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.report-handle:hover {
+  text-decoration: underline;
+}
+
+.report-flag-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 10px;
+  color: #fff;
+  letter-spacing: 0.3px;
+}
+
+.report-flag-badge-suspicious { background: #FF3B30; }
+.report-flag-badge-possibly_suspicious { background: #FF9500; }
+.report-flag-badge-typical { background: #34C759; }
+
+.report-reasons-cell {
+  color: #aaa;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.report-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.report-action-btn {
+  background: #1d1f24;
+  border: 1px solid #2C2C2E;
+  color: #aaa;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.report-action-btn:hover {
+  background: #2a2d33;
+  color: #fff;
+}
+
+.report-empty {
+  text-align: center;
+  padding: 40px;
+  color: #6a6f78;
+  font-size: 13px;
+}
