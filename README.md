@@ -251,7 +251,7 @@ Profile panel on an X user profile, with per-feature contributions in percentage
 <p><img width="720" alt="Profile panel on CNN's profile showing 30 out of 100 HUMAN with per-feature contributions as percentages" src="https://git.generalassemb.ly/user-attachments/assets/acaa9bda-8d9f-4a9a-a461-71df1c1dbcd5" /></p>
 
 Toolbar popup with the same breakdown:
-<img width="386" height="584" alt="Toolbar popup showing CNN's bot score and percentage contribution breakdown" src="https://git.generalassemb.ly/user-attachments/assets/839f90a3-fda8-4f97-8385-7b245a7b0ac3" />
+<img width="386" height="564" alt="Toolbar popup showing CNN's bot score and percentage contribution breakdown" src="https://git.generalassemb.ly/user-attachments/assets/839f90a3-fda8-4f97-8385-7b245a7b0ac3" />
 
 Thread scan on a busy reply section, with coloured dots next to flagged usernames, coloured left-borders on flagged replies, and a summary panel on the bottom right:
 <img width="1512" height="864" alt="Thread scan with dots next to reply usernames, red and orange left-borders on flagged replies, and a summary panel" src="https://git.generalassemb.ly/user-attachments/assets/6609d69e-015b-43cd-b410-4a489e37abfc" />
