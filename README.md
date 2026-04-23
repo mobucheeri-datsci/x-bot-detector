@@ -118,12 +118,26 @@ I tested whether richer bio representations help. I generated 384-dimensional Se
 The fused model regressed by 0.0025 F1 against the baseline. The dataset explains the result: 19% of bios are empty and the median non-empty bio is 53 characters, shorter than the input SBERT is trained on. There isn't enough signal in most bios for SBERT to contribute above what the existing bio features (`has_description`, `description_length`, `bio_word_count`, `bio_has_news_keywords`, `bio_has_org_keywords`) already extract. The deployed model stays at the 37-feature baseline. Implementation in `src/embed_bios.py`, with the fused training variant handled inside `src/train.py`.
 
 ## How to Run
-### Requirements
+### Quick install (just the extension)
+The backend is deployed at `https://mobucheeri-x-bot-detector.hf.space`. The extension calls this endpoint, so no local setup is needed.
+1. Once the extension is approved on the Chrome Web Store, install it from there.
+2. In the meantime, to install manually:
+   - Clone the repo.
+   - Open `chrome://extensions` in Chrome.
+   - Turn on Developer mode.
+   - Click Load unpacked and select the `extension/` folder.
+
+Visit any profile on `x.com` to see the scoring panel. Visit any tweet thread to see per-reply scoring.
+
+### Development setup
+To retrain the models, run the evaluations, or reproduce any of the work in this repo:
+
+#### Requirements
 - Python 3.11
 - Google Chrome (any recent version)
 - Roughly 4 GB free disk for the dataset, embeddings, and trained checkpoints
 
-### Setup
+#### Setup
 ```bash
 git clone https://git.generalassemb.ly/mobucheeri/twitter-bot-detector.git
 cd twitter-bot-detector
@@ -132,16 +146,16 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Train and Evaluate
+#### Train and Evaluate
 ```bash
-python src/data.py # Download and preprocess the dataset
-python src/train.py # Train the three models, tune thresholds, save the best
-python src/orgs_eval.py # Run the 50-organisation benchmark against the saved model
+python src/data.py
+python src/train.py
+python src/orgs_eval.py
 ```
 
 `train.py` auto-detects the SBERT bio embeddings cache at `data/processed/bio_embeddings.npy`. If it exists, `train.py` also trains the fused XGBoost variant as a fourth model. If not, it skips that step cleanly.
 
-### OPTIONAL: Reproduce the Sentence-BERT Ablation
+#### OPTIONAL: Reproduce the Sentence-BERT Ablation
 To include the SBERT fused model described under Evaluation, run `embed_bios.py` before `train.py`:
 
 ```bash
@@ -149,7 +163,7 @@ python src/embed_bios.py
 python src/train.py
 ```
 
-### External Validation on MGTAB
+#### External Validation on MGTAB
 ```bash
 pip install gdown
 mkdir -p data/raw/mgtab && cd data/raw/mgtab
@@ -158,22 +172,14 @@ cd ../../..
 python src/mgtab_eval.py
 ```
 
-### Run the Extension
-Start the backend:
+#### Run the backend locally
+If you want to run the backend on your own machine instead of using the hosted one:
+
 ```bash
 uvicorn api.app:app --reload --port 8000
 ```
 
-Load the extension in Chrome:
-1. Open `chrome://extensions`
-2. Enable Developer mode
-3. Click Load unpacked
-4. Select the `extension/` folder
-
-Navigate to any X profile or tweet detail page to see the inline panel, the toolbar popup, and the thread analysis.
-
-### Notes
-Trained checkpoints, the preprocessed dataset, the SBERT embedding cache, and MGTAB data are gitignored. The analysis notebook is committed with cell outputs preserved, so it renders on GitHub without re-running anything.
+Then change `apiBase` in `extension/background/service-worker.js` from the Hugging Face URL to `http://localhost:8000` before loading the extension.
 
 ## Repo Structure
 
@@ -222,7 +228,7 @@ The training labels were collected on English X content from 2018 to 2020. Non-E
 
 The `verified` feature is the model's strongest predictor of HUMAN. In 2018 to 2020 verification was a public-figure and institution badge, but after 2022 it became a paid subscription feature on X. A paid-verified modern bot would trigger the same HUMAN signal the model learned to trust.
 
-Inference runs locally. The FastAPI backend listens on `localhost:8000` on the user's own machine, the Chrome extension calls only that endpoint, and no profile data is transmitted elsewhere. The backend does not write logs. So, a live deployment would need privacy disclosures.
+Inference runs on a Hugging Face Space at `https://mobucheeri-x-bot-detector.hf.space`. The Chrome extension sends profile metadata over HTTPS to this endpoint and the endpoint returns a score and an explanation. The backend does not log or store any data. The source code for the backend is public, and users can also run it locally for full privacy.
 
 Wrongly labelling a real user as a bot is more costly than missing a bot, so the system is biased toward fewer false positives. Each model's decision threshold is tuned for F1 instead of accuracy, the extension returns UNCERTAIN when the score sits within 0.10 of the threshold, and the deployed XGBoost has the lowest false-positive count of the three models trained.
 
