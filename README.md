@@ -233,9 +233,8 @@ A 3-minute walkthrough of the extension in action: https://www.loom.com/share/f4
 ### Screenshots
 
 Profile panel on an X user profile, with per-feature contributions in percentages:
-<img width="1512" height="863" alt="Screenshot 2026-04-25 at 14 38 36" src="https://git.generalassemb.ly/user-attachments/assets/070cbefd-6ae8-4d92-af5b-62a282cb5872" />
 
-<p><img width="720" alt="Profile panel on Elon Musk's profile bot score and percentage-based contribution breakdown" src="https://git.generalassemb.ly/user-attachments/assets/acaa9bda-8d9f-4a9a-a461-71df1c1dbcd5" /></p>
+<p><img width="720" alt="Profile panel on Elon Musk's profile bot score and percentage-based contribution breakdown" src="https://git.generalassemb.ly/user-attachments/assets/070cbefd-6ae8-4d92-af5b-62a282cb5872" /></p>
 
 Toolbar popup with the same breakdown:
 
