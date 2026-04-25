@@ -1,10 +1,10 @@
 # X Bot Detector
-A Chrome extension that scores any X profile for bot likelihood in real time, backed by an XGBoost model trained on 37,438 labelled accounts.
+A Chrome extension that scores any X profile and tweet thread for bot likelihood in real time, backed by an XGBoost model trained on 37,438 labelled accounts.
 
 ## Problem Statement
 Automated accounts make up a large and growing share of activity on social media. The 2024 Imperva Bad Bot Report found that almost half of all internet traffic in 2023 was automated, with bad bots responsible for 32% of total traffic (Imperva, 2024). On X, automated accounts amplify low-credibility content (Shao et al., 2018), distort political discourse during elections (Bessi and Ferrara, 2016; Howard, Woolley and Calo, 2018), and increase exposure to negative material (Stella, Ferrara and De Domenico, 2018). As an active user on X, I often cannot tell what is real or automated (Ferrara et al., 2016; Cresci, 2020).
 
-Existing bot detection tools either need academic API access, live on a separate website, or sit behind a paid subscription. None of them run inside the browser where the user already is. This project fills that gap, which is building a bot detection model that only uses profile features a browser can see, deployed as a Chrome extension that scores any profile in real time with a readable explanation of why.
+Existing bot detection tools either need academic API access, live on a separate website, or sit behind a paid subscription. None of them run inside the browser where the user already is. This project fills that gap by building a bot detection model that only uses profile features a browser can see, deployed as a Chrome extension that scores any profile and reply thread in real time with a readable explanation of why.
 
 ## Dataset
 `twitter_human_bots.csv` from airt-ml (2023), hosted on Hugging Face under CC BY-SA 3.0. 37,438 X accounts labelled as `human` (25,013) or `bot` (12,425), giving a 2:1 class imbalance. The dataset downloads automatically on first run via the `datasets` library.
@@ -115,12 +115,25 @@ I tested whether richer bio representations help. I generated 384-dimensional Se
 The fused model regressed by 0.0025 F1 against the baseline. The dataset explains the result: 19% of bios are empty and the median non-empty bio is 53 characters, shorter than the input SBERT is trained on. There isn't enough signal in most bios for SBERT to contribute above what the existing bio features (`has_description`, `description_length`, `bio_word_count`, `bio_has_news_keywords`, `bio_has_org_keywords`) already extract. The deployed model stays at the 37-feature baseline. Implementation in `src/embed_bios.py`, with the fused training variant handled inside `src/train.py`.
 
 ## How to Run
-### Requirements
+The backend is deployed at `https://mobucheeri-x-bot-detector.hf.space`. The extension calls this endpoint, so no local setup is needed.
+1. The extension is pending review on the Chrome Web Store. If approved, it will be installable from there directly. However, it is not guaranteed that the Chrome Web Store will approve it, so this is the only method of deployment so far.
+3. In the meantime, to install manually:
+   - Clone the repo
+   - Open `chrome://extensions` in Chrome
+   - Turn on Developer mode
+   - Click Load unpacked and select the `extension/` folder
+
+Visit any profile on `x.com` to see the scoring panel. Visit any tweet thread to see per-reply heuristic flagging.
+
+### Development setup
+To retrain the models, run the evaluations, or reproduce any of the work in this repo:
+
+#### Requirements
 - Python 3.11
 - Google Chrome (any recent version)
 - Roughly 4 GB free disk for the dataset, embeddings, and trained checkpoints
 
-### Setup
+#### Setup
 ```bash
 git clone https://git.generalassemb.ly/mobucheeri/twitter-bot-detector.git
 cd twitter-bot-detector
@@ -129,24 +142,23 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Train and Evaluate
+#### Train and Evaluate
 ```bash
-python src/data.py # Download and preprocess the dataset
-python src/train.py # Train the three models, tune thresholds, save the best
-python src/orgs_eval.py # Run the 50-organisation benchmark against the saved model
+python src/data.py
+python src/train.py
+python src/orgs_eval.py
 ```
 
-`train.py` auto-detects the SBERT bio embeddings cache at `data/processed/bio_embeddings.npy`. If it exists, `train.py` also trains the fused XGBoost variant as a fourth model. If not, it skips that step cleanly.
+`train.py` auto-detects the SBERT bio embeddings cache at `data/processed/bio_embeddings.npy`. If it exists, `train.py` also trains the fused XGBoost variant as a fourth model. If not, it skips that step.
 
-### OPTIONAL: Reproduce the Sentence-BERT Ablation
+#### Optional: Reproduce the Sentence-BERT Ablation
 To include the SBERT fused model described under Evaluation, run `embed_bios.py` before `train.py`:
-
 ```bash
-python src/embed_bios.py  # Encode all bios with Sentence-BERT and cache to disk
-python src/train.py       # Re-run; train.py auto-detects the cache and trains the fused variant
+python src/embed_bios.py
+python src/train.py
 ```
 
-### External Validation on MGTAB
+#### External Validation on MGTAB
 ```bash
 pip install gdown
 mkdir -p data/raw/mgtab && cd data/raw/mgtab
@@ -155,21 +167,15 @@ cd ../../..
 python src/mgtab_eval.py
 ```
 
-### Run the Extension
-Start the backend:
+#### Run the backend locally (optional)
+If you want to run the backend on your own machine instead of using the hosted Hugging Face Space:
 ```bash
 uvicorn api.app:app --reload --port 8000
 ```
 
-Load the extension in Chrome:
-1. Open `chrome://extensions`
-2. Enable Developer mode
-3. Click Load unpacked
-4. Select the `extension/` folder
+Then change `apiBase` in `extension/background/service-worker.js` from the Hugging Face URL to `http://localhost:8000` before loading the extension.
 
-Navigate to any X profile or tweet detail page to see the inline panel, the toolbar popup, and the thread analysis.
-
-### Notes
+### Note
 Trained checkpoints, the preprocessed dataset, the SBERT embedding cache, and MGTAB data are gitignored. The analysis notebook is committed with cell outputs preserved, so it renders on GitHub without re-running anything.
 
 ## Repo Structure
@@ -198,6 +204,7 @@ twitter-bot-detector/
 │   ├── popup/
 │   ├── background/
 │   └── icons/
+├── X Bot Detection_ Presentation.pdf
 └── notebooks/analysis.ipynb
 ```
 
@@ -221,33 +228,40 @@ The live extension's only observed misclassifications (Al Jazeera at 84/100, CNN
 
 ## Screenshots and Demo
 ### Demo Video
-A 3-minute walkthrough of the extension in action: [ADD_UNLISTED_YOUTUBE_OR_VIMEO_LINK_HERE]
+A 3-minute walkthrough of the extension in action: https://www.loom.com/share/f40e6a858c684b91973baff2f7c30e11
 
 ### Screenshots
-Profile panel on an X user profile, with per-feature contributions:
 
-![Profile panel](assets/figures/profile_panel.png)
+Profile panel on an X user profile, with per-feature contributions in percentages:
+<img width="1512" height="863" alt="Screenshot 2026-04-25 at 14 38 36" src="https://git.generalassemb.ly/user-attachments/assets/070cbefd-6ae8-4d92-af5b-62a282cb5872" />
+
+<p><img width="720" alt="Profile panel on Elon Musk's profile bot score and percentage-based contribution breakdown" src="https://git.generalassemb.ly/user-attachments/assets/acaa9bda-8d9f-4a9a-a461-71df1c1dbcd5" /></p>
 
 Toolbar popup with the same breakdown:
 
-![Popup](assets/figures/popup.png)
+<p><img width="386" alt="Toolbar popup showing Elon Musk's bot score and percentage-based contribution breakdown" src="https://git.generalassemb.ly/user-attachments/assets/35b65153-1279-40a6-a63a-c2704336df7e" /></p>
 
-Thread analysis showing hover cards on reply accounts and the coordinated inauthentic behaviour clustering:
+Thread scan on a reply section, with coloured dots next to flagged usernames, coloured left-borders on flagged replies, and a summary panel at the bottom right:
 
-![Thread analysis](assets/figures/thread_analysis.png)
+<p><img width="720" alt="Thread scan with dots next to reply usernames, red and orange left-borders on flagged replies, and a summary panel" src="https://git.generalassemb.ly/user-attachments/assets/9b525275-47d6-4826-b35c-96350c6c423a" /></p>
+
+Full report view, opened in a new tab from the thread panel, with flag distribution, most common reasons, and table of flagged accounts:
+
+<p><img width="720" alt="Full thread scan report showing 21 typical, 2 possibly suspicious, 6 suspicious, a flag distribution chart, common flagging reasons, and a table of flagged handles" src="https://git.generalassemb.ly/user-attachments/assets/1ca800f8-8a36-49fc-9bc8-a9bd4316b8c7" /></p>
+
+Toolbar popup on a thread page, summarising the scan across all replies:
+
+<p><img width="720" alt="Toolbar popup on a thread page summarising total replies scanned and counts per flag category" src="https://git.generalassemb.ly/user-attachments/assets/b5238fd0-9dee-4f4a-82f2-358b16b5d032" /></p>
 
 ## License and Acknowledgments
 ### License
-This project is released under the MIT License. See `LICENSE` for the full text.
-
 The training dataset (`twitter_human_bots.csv` from airt-ml) is distributed under CC BY-SA 3.0 and is not redistributed in this repository; it downloads from Hugging Face on first run. MGTAB (Liu et al., 2023) is distributed under its own terms by the original authors.
 
 ### Acknowledgments
 - General Assembly Data Science PT2 programme, delivered through BIBF in Bahrain.
-- Tamkeen for programme sponsorship.
 - airt-ml for publishing the `twitter-human-bots` dataset on Hugging Face.
 - Liu et al. (2023) for making the MGTAB dataset and baselines public.
-- The authors of the libraries this project depends on: PyTorch, XGBoost, scikit-learn, pandas, NumPy, FastAPI, Hugging Face `datasets`, and Sentence-Transformers.
+- The authors of the libraries used in this project: PyTorch, XGBoost, scikit-learn, pandas, NumPy, FastAPI, Hugging Face `datasets`, and Sentence-Transformers.
 
 ## References
 airt-ml (2023). *Twitter Human Bots Dataset*. Hugging Face. Available at: https://huggingface.co/datasets/airt-ml/twitter-human-bots [Accessed April 2026].
