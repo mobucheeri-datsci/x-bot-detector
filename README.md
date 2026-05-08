@@ -135,7 +135,7 @@ To retrain the models, run the evaluations, or reproduce any of the work in this
 
 #### Setup
 ```bash
-git clone https://git.generalassemb.ly/mobucheeri/twitter-bot-detector.git
+git clone https://github.com/mobucheeri/x-bot-detector
 cd twitter-bot-detector
 python3.11 -m venv .venv
 source .venv/bin/activate
