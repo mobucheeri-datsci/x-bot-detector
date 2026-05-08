@@ -257,7 +257,6 @@ Toolbar popup on a thread page, summarising the scan across all replies:
 The training dataset (`twitter_human_bots.csv` from airt-ml) is distributed under CC BY-SA 3.0 and is not redistributed in this repository; it downloads from Hugging Face on first run. MGTAB (Liu et al., 2023) is distributed under its own terms by the original authors.
 
 ### Acknowledgments
-- General Assembly Data Science PT2 programme, delivered through BIBF in Bahrain.
 - airt-ml for publishing the `twitter-human-bots` dataset on Hugging Face.
 - Liu et al. (2023) for making the MGTAB dataset and baselines public.
 - The authors of the libraries used in this project: PyTorch, XGBoost, scikit-learn, pandas, NumPy, FastAPI, Hugging Face `datasets`, and Sentence-Transformers.
