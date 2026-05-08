@@ -1,4 +1,4 @@
-const apiBase = "https://mobucheeri-x-bot-detector.hf.space";
+const apiBase = "https://mobucheeri-twitter-bot-detector.hf.space";;
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "PREDICT") {

@@ -4,14 +4,14 @@
   "version": "1.0.0",
   "description": "Scores X bots in real time. Catch suspicious profiles and replies the moment you see them, with the signals behind every call.",
   "author": "mobucheeri",
-  "homepage_url": "https://github.com/mobucheeri/x-bot-detector",
+  "homepage_url": "https://github.com/mobucheeri-datsci/x-bot-detector",
   "short_name": "Bot Detector",
   "minimum_chrome_version": "100",
   "permissions": ["activeTab", "storage"],
   "host_permissions": [
     "https://x.com/*",
     "https://twitter.com/*",
-    "https://mobucheeri-x-bot-detector.hf.space/*"
+    "https://mobucheeri-twitter-bot-detector.hf.space/*"
   ],
   "web_accessible_resources": [
     {

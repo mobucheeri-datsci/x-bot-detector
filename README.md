@@ -115,9 +115,10 @@ I tested whether richer bio representations help. I generated 384-dimensional Se
 The fused model regressed by 0.0025 F1 against the baseline. The dataset explains the result: 19% of bios are empty and the median non-empty bio is 53 characters, shorter than the input SBERT is trained on. There isn't enough signal in most bios for SBERT to contribute above what the existing bio features (`has_description`, `description_length`, `bio_word_count`, `bio_has_news_keywords`, `bio_has_org_keywords`) already extract. The deployed model stays at the 37-feature baseline. Implementation in `src/embed_bios.py`, with the fused training variant handled inside `src/train.py`.
 
 ## How to Run
-The backend is deployed at `https://mobucheeri-x-bot-detector.hf.space`. The extension calls this endpoint, so no local setup is needed.
-1. The extension is pending review on the Chrome Web Store. If approved, it will be installable from there directly. However, it is not guaranteed that the Chrome Web Store will approve it, so this is the only method of deployment so far.
-3. In the meantime, to install manually:
+The backend is deployed at `https://mobucheeri-twitter-bot-detector.hf.space`. The extension calls this endpoint, so no local setup is needed.
+1. The extension is pending review on the Chrome Web Store. If approved, it will be installable from there directly. However, it is not guaranteed that the Chrome    
+   Web Store will approve it, so this is the only method of deployment so far.
+2. In the meantime, to install manually:
    - Clone the repo
    - Open `chrome://extensions` in Chrome
    - Turn on Developer mode
