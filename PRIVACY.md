@@ -5,8 +5,6 @@
 
 This Privacy Policy describes how the X Bot Detector Chrome extension (the "extension") handles information when you use it. By installing and using the extension, you acknowledge this policy.
 
----
-
 ## 1. Who is responsible
 
 The extension is developed and maintained as an open-source project. The contact channel for any questions about this policy or about data handling is the project's GitHub Issues page:
@@ -14,8 +12,6 @@ The extension is developed and maintained as an open-source project. The contact
 https://github.com/mobucheeri-datsci/x-bot-detector/issues
 
 The extension is a non-commercial open-source project. The project author acts as the data controller for any processing within the meaning of GDPR Article 4.
-
----
 
 ## 2. What data the extension processes
 
@@ -42,8 +38,6 @@ The extension does not collect or transmit:
 - Your activity on other websites or other Chrome tabs
 - Mouse position, keystroke logs, scroll positions, or other behavioural data
 
----
-
 ## 3. How the data is used
 
 Profile features extracted from X pages are sent over HTTPS to a backend service hosted on Hugging Face Spaces at:
@@ -56,8 +50,6 @@ The application code on the backend does not log or persist request data, respon
 
 Note that Hugging Face, as the platform host, may collect standard HTTP infrastructure data (such as transient IP addresses for routing) per their own privacy policy at https://huggingface.co/privacy. The extension developer does not control or have access to Hugging Face's infrastructure logs.
 
----
-
 ## 4. Local storage
 
 The extension uses `chrome.storage.local` to cache the most recent score result so that the toolbar popup can redisplay it without making another network request. This cache:
@@ -69,21 +61,15 @@ The extension uses `chrome.storage.local` to cache the most recent score result 
 
 The cache contains the public profile features and the model's response for the most recent profile scored. It contains no personal data about you, the extension user.
 
----
-
 ## 5. Cookies and similar technologies
 
 The extension does not use cookies, web beacons, tracking pixels, fingerprinting, local storage on web pages, or any similar tracking technology. The only persistence mechanism the extension uses is Chrome's extension storage API (`chrome.storage.local`), described in section 4, which is local to your browser and never transmitted.
-
----
 
 ## 6. Data sharing
 
 The extension does not sell, rent, share, transfer, or otherwise disclose any data to third parties. The only external service the extension communicates with is the Hugging Face Space backend described in section 3, which is operated by the same developer and exists solely to run the scoring model.
 
 The extension does not use analytics services, advertising networks, social media tracking, or any third-party SDKs.
-
----
 
 ## 7. Sub-processors
 
@@ -93,15 +79,11 @@ The extension relies on one sub-processor:
 
 No other sub-processors, data processors, or third-party services are involved in the operation of the extension.
 
----
-
 ## 8. International data transfers
 
 The Hugging Face Space backend is hosted on Hugging Face's infrastructure, which may be located in the United States or other regions. By using the extension, you understand that profile features may be transmitted to and processed in jurisdictions outside your own. The application code does not retain or log this data; transient processing occurs only to compute the score and return it.
 
 For users in the European Economic Area, this transfer is justified on the basis of legitimate interest (analysing publicly available data to compute a bot likelihood score, at the user's explicit initiation by visiting an X page) under GDPR Article 6(1)(f).
-
----
 
 ## 9. Data retention
 
@@ -111,8 +93,6 @@ For users in the European Economic Area, this transfer is justified on the basis
 | API request data | Backend memory | Duration of the HTTP request only; not logged |
 | API response data | Backend memory | Duration of the HTTP request only; not logged |
 | Hugging Face infrastructure logs | Hugging Face platform | Per Hugging Face's own retention policies, outside the extension developer's control |
-
----
 
 ## 10. Automated decision-making
 
@@ -124,19 +104,13 @@ If you are an X account holder and wish to challenge a score the extension produ
 
 https://github.com/mobucheeri-datsci/x-bot-detector/issues/new/choose
 
----
-
 ## 11. Special categories of personal data
 
 The extension does not knowingly process any special categories of personal data as defined in GDPR Article 9 (such as data revealing racial or ethnic origin, political opinions, religious or philosophical beliefs, trade union membership, genetic or biometric data, health data, or data concerning sexual orientation), nor any sensitive personal information as defined in CCPA / CPRA.
 
----
-
 ## 12. EU representative
 
 The extension is a non-commercial open-source project that processes a minimal volume of data for a single, limited purpose. On that basis, the project is exempt from the requirement to designate an EU representative under GDPR Article 27(2). For any data protection inquiries from EU users, the contact channel in section 1 applies and is actively monitored.
-
----
 
 ## 13. What happens when you uninstall
 
@@ -147,8 +121,6 @@ When you uninstall the extension from `chrome://extensions`:
 - Any data transmitted in previous requests is not retrievable, because it was never persisted on the backend.
 
 If you also wish to clear cached data without uninstalling, you can do so via Chrome's Settings menu under Privacy and security, by clearing extension data.
-
----
 
 ## 14. Your rights
 
@@ -183,13 +155,9 @@ To exercise these rights, contact us via the GitHub Issues link in section 1.
 
 Equivalent rights under other applicable privacy laws (such as the UK GDPR, LGPD in Brazil, or PIPEDA in Canada) are honoured to the same extent. Contact us via GitHub Issues to make any request.
 
----
-
 ## 15. Children's privacy
 
 The extension is not directed at children under the age of 13, and we do not knowingly process information from anyone under 13. Use of X is itself subject to X's age requirement of 13 or older. If a parent or guardian believes a child under 13 has used the extension, contact us via GitHub Issues and we will take appropriate action.
-
----
 
 ## 16. Security
 
@@ -201,13 +169,9 @@ https://github.com/mobucheeri-datsci/x-bot-detector
 
 If you discover a security vulnerability, please report it via the GitHub Issues link rather than disclosing it publicly, so that we can address it promptly.
 
----
-
 ## 17. Changes to this policy
 
 This Privacy Policy may be updated from time to time. Material changes will be reflected in updates to the extension and noted in the project README. The "Last updated" date at the top of this document indicates when the policy was last revised. Continued use of the extension after a revision constitutes acceptance of the updated policy.
-
----
 
 ## 18. Compliance with the Chrome Web Store Developer Program Policies
 
@@ -217,8 +181,6 @@ The extension complies with Google's Chrome Web Store Developer Program Policies
 - Does not transfer user data to third parties for serving advertisements
 - Does not transfer or use user data to determine creditworthiness or for lending purposes
 - Does not allow humans to read collected data, except as required by law, to provide a service the user requested, or for security and abuse investigations
-
----
 
 ## 19. Contact
 
