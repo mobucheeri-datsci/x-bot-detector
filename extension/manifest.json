@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "X Bot Detector",
   "version": "1.0.0",
-  "description": "Detects bot accounts on X using deep learning. Shows bot probability scores on profiles.",
+  "description": "Scores X bots in real time. Catch suspicious profiles and replies the moment you see them, with the signals behind every call.",
   "permissions": ["activeTab", "storage"],
   "host_permissions": [
     "https://x.com/*",
