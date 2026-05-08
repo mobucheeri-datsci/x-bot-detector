@@ -1,0 +1,49 @@
+name: Inaccurate Bot Score
+description: The model gave a score you believe is clearly wrong
+title: "[Score] "
+labels: ["model", "accuracy"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this only when the model itself produced a wrong classification, not for general bugs.
+
+        Bot detection on the modern web is genuinely hard and the model is imperfect. This template helps track failures so the next training run can improve.
+
+  - type: input
+    id: handle
+    attributes:
+      label: Account handle
+      description: The @username (without the @)
+      placeholder: "elonmusk"
+    validations:
+      required: true
+
+  - type: input
+    id: score
+    attributes:
+      label: Score the extension gave
+      description: The 0 to 100 number and the label
+      placeholder: "92, BOT"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: expected
+    attributes:
+      label: What it should have shown
+      options:
+        - HUMAN
+        - BOT
+        - UNCERTAIN
+        - Hone        - Hone        - Hns        - Hone        - Hone        - Hns        - Hone       rib        - Honabel:        - Hone        -e is wrong
+                   What signals make         ident the classification is off?
+    validations:
+      required: true
+
+  - type: textarea
+    id: contribu    id: contribu    id: contribu    id: contribu    id: contribu    id: contribu    id: contribu    id: contribu    id: contribu    id: contribu    id: contan s    id: contridel focused on.
+      placeholder: |
+        verified status: 28 percent toward bot
+        follower count: 22 percent toward human
+        account age: 14 percent toward bot

@@ -1,0 +1,36 @@
+name: Feature Request
+description: An idea for new functionality or an improvement
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem this solves
+      description: What friction or limitation would this feature address?
+      placeholder: |
+        When I open the report view from a thread scan, I can't filter the table to just suspicious accounts.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed feature
+      description: What would the feature actually do? UI sketches or screenshots welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: Workarounds you've tried, similar features in other extensions.
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: How important is this to you
+      options:
+        - Nice to have
+        - Would use sometimes

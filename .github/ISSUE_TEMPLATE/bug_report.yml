@@ -1,0 +1,77 @@
+name: Bug Report
+description: Something broke or behaved unexpectedly in the extension
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please fill in as much detail as you can so I can reproduce it.
+
+        Before submitting:
+        - Confirm you're on the latest version of the extension
+        - Refresh the X tab and try again
+        - Search existing issues to see if it's already reported
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug. What did you do, what did you expect, what actually happened?
+      placeholder: |
+        I visited a profile page and the side panel showed "API error 500" instead of a score.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to https://x.com/<username>
+        2. Wait for the side panel to load
+        3. Observe the er   
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+    attributesRL    attributesen         description: The X profile or thread URL, or "all profiles" if it's everywhere
+      placeholder: https://x.com/elonmusk
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser version
+      description: From Chrome menu, About Google Chrome
+      placeholder: "Chrome 130.0.6723.92"
+    validations:
+      required: true
+
+  - type: input
+    id: ext_version
+    attributes:
+      label: Extension version
+      description: From chrome://extensions, click Details on X Bot Detector
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "macOS 15.1, Windows 11, Ubuntu 24.04, etc."
+
+     ype: textarea
+    id: console
+    attributes:
+      label:       label:         description: Right-click on the X page, Inspect, Console tab. Copy any red error line      label:       label: [bot-detector].
+      render: shell
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: Drag a screenshot into this box if it helps.
