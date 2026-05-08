@@ -135,7 +135,7 @@ To retrain the models, run the evaluations, or reproduce any of the work in this
 
 #### Setup
 ```bash
-git clone https://github.com/mobucheeri/x-bot-detector
+git clone https://github.com/mobucheeri-datsci/x-bot-detector
 cd x-bot-detector
 python3.11 -m venv .venv
 source .venv/bin/activate
