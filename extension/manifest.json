@@ -3,6 +3,10 @@
   "name": "X Bot Detector",
   "version": "1.0.0",
   "description": "Scores X bots in real time. Catch suspicious profiles and replies the moment you see them, with the signals behind every call.",
+  "author": "mobucheeri",
+  "homepage_url": "https://github.com/mobucheeri/x-bot-detector",
+  "short_name": "Bot Detector",
+  "minimum_chrome_version": "100",
   "permissions": ["activeTab", "storage"],
   "host_permissions": [
     "https://x.com/*",
@@ -37,6 +41,7 @@
   ],
   "action": {
     "default_popup": "popup/popup.html",
+    "default_title": "Click to score the current X profile or thread",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
