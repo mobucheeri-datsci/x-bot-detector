@@ -228,6 +228,7 @@ The live extension's only observed misclassifications (Al Jazeera at 84/100, CNN
 6. Find and test more recent datasets that would more likely record LLM-driven bot behaviours across the features.
 
 ## Screenshots and Demo
+
 ### Demo Video
 A 3-minute walkthrough of the extension in action: https://www.loom.com/share/f40e6a858c684b91973baff2f7c30e11
 
@@ -235,23 +236,23 @@ A 3-minute walkthrough of the extension in action: https://www.loom.com/share/f4
 
 Profile panel on an X user profile, with per-feature contributions in percentages:
 
-![Profile panel on Elon Musk's profile bot score and percentage-based contribution breakdown](https://github.com/user-attachments/assets/89255eb2-a180-49d6-a1f8-b642c895a241)
+<img width="720" alt="Profile panel on Elon Musk's profile bot score and percentage-based contribution breakdown" src="https://github.com/user-attachments/assets/89255eb2-a180-49d6-a1f8-b642c895a241" />
 
 Toolbar popup with the same breakdown:
 
-![Toolbar popup with per-feature contribution breakdown](https://github.com/user-attachments/assets/6ff075a2-0d64-43df-bb78-3a161020a588)
+<img width="386" alt="Toolbar popup with bot score and per-feature contribution breakdown" src="https://github.com/user-attachments/assets/6ff075a2-0d64-43df-bb78-3a161020a588" />
 
 Thread scan on a reply section, with coloured dots next to flagged usernames, coloured left-borders on flagged replies, and a summary panel at the bottom right:
 
-![Thread scan with dots next to reply usernames, red and orange left-borders on flagged replies, and a summary panel](https://github.com/user-attachments/assets/a5848a5d-632b-486a-a1ac-2171823472e3)
+<img width="720" alt="Thread scan with dots next to reply usernames, red and orange left-borders on flagged replies, and a summary panel" src="https://github.com/user-attachments/assets/a5848a5d-632b-486a-a1ac-2171823472e3" />
 
 Full report view, opened in a new tab from the thread panel, with flag distribution, most common reasons, and table of flagged accounts:
 
-![Full thread scan report showing 21 typical, 2 possibly suspicious, 6 suspicious, a flag distribution chart, common flagging reasons, and a table of flagged handles](https://github.com/user-attachments/assets/bea6b1e4-e87b-4f01-9339-11ca349a3391)
+<img width="720" alt="Full thread scan report showing 21 typical, 2 possibly suspicious, 6 suspicious, a flag distribution chart, common flagging reasons, and a table of flagged handles" src="https://github.com/user-attachments/assets/bea6b1e4-e87b-4f01-9339-11ca349a3391" />
 
 Toolbar popup on a thread page, summarising the scan across all replies:
 
-![Toolbar popup on a thread page summarising total replies scanned and counts per flag category](https://github.com/user-attachments/assets/70d7f4e7-01c0-4382-bc57-e460c8e8cee8)
+<img width="720" alt="Toolbar popup on a thread page summarising total replies scanned and counts per flag category" src="https://github.com/user-attachments/assets/70d7f4e7-01c0-4382-bc57-e460c8e8cee8" />
 
 ## License and Acknowledgments
 ### License
