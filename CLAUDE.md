@@ -31,7 +31,7 @@ Originally built as a General Assembly Data Science Immersive capstone project (
 - API key auth and rate limiting added to api/app.py (July 2026, not yet deployed). Keys are HMAC-signed with the API_SECRET env var and verified statelessly, issued per install via POST /register (limited to 5 per IP per hour). Rate limits are per key: 60 scans per minute, 1000 per day (free tier). Enforcement of missing keys only happens when REQUIRE_API_KEY=1 is also set, so the rollout order is: deploy backend with API_SECRET set, publish extension 1.1.0 (registers and sends X-API-Key, stores the key in chrome.storage.local), wait for users to update, then set REQUIRE_API_KEY=1. With API_SECRET unset (local dev), auth is disabled entirely. In-memory rate buckets reset on Space restart; acceptable at current scale.
 
 ## Open items
-- Deploy the API key changes: push api/app.py to the HF Space with API_SECRET set, upload extension 1.1.0 to the Chrome Web Store, then set REQUIRE_API_KEY=1 once users have updated.
+- Set REQUIRE_API_KEY=1 on the HF Space once extension 1.1.0 has rolled out (deployed to the Space with API_SECRET set on 31 July 2026; 1.1.0 submitted for Chrome Web Store review the same day; store listing and PRIVACY.md updated to disclose the anonymous access key; a scheduled reminder for the flip runs on 14 August 2026).
 - Move the Space off the free tier (or to another host) so the backend does not sleep; prerequisite for charging users.
 - Demo video may need re-recording to reflect the current production version: hosted backend, updated vocabulary, no log-odds display, no CIB clusters shown.
 - Undecided: update GA repo references to point directly at the correct Hugging Face URL, or continue relying on redirects.
