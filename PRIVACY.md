@@ -1,7 +1,7 @@
 # Privacy Policy for X Bot Detector
 
 **Effective date:** 8 May 2026
-**Last updated:** 8 May 2026
+**Last updated:** 31 July 2026
 
 This Privacy Policy describes how the X Bot Detector Chrome extension (the "extension") handles information when you use it. By installing and using the extension, you acknowledge this policy.
 
@@ -52,7 +52,9 @@ Note that Hugging Face, as the platform host, may collect standard HTTP infrastr
 
 ## 4. Local storage
 
-The extension uses `chrome.storage.local` to cache the most recent score result so that the toolbar popup can redisplay it without making another network request. This cache:
+The extension uses `chrome.storage.local` for two items: a cache of the most recent score result, and an anonymous access key for the scoring service.
+
+The score cache exists so that the toolbar popup can redisplay the latest result without making another network request. This cache:
 
 - Stores only the most recent score result (a single record)
 - Is overwritten each time a new profile or thread is analysed
@@ -60,6 +62,13 @@ The extension uses `chrome.storage.local` to cache the most recent score result 
 - Is removed when you uninstall the extension or clear Chrome extension storage
 
 The cache contains the public profile features and the model's response for the most recent profile scored. It contains no personal data about you, the extension user.
+
+The access key is a random, machine-generated credential that the extension obtains automatically from the backend on first use and then sends with its scoring requests. It exists so the backend can apply fair-use rate limits and distinguish extension traffic from abuse. The key:
+
+- Is generated at random by the backend and contains no personal information
+- Identifies an installation of the extension, not you, your browser, or your X account
+- Is not linked to, and cannot be linked to, any account, email address, or other identifier of yours
+- Is removed when you uninstall the extension or clear Chrome extension storage, after which a new key is obtained automatically
 
 ## 5. Cookies and similar technologies
 
@@ -90,8 +99,10 @@ For users in the European Economic Area, this transfer is justified on the basis
 | Data | Location | Retention period |
 |---|---|---|
 | Most recent score result | Your browser (chrome.storage.local) | Until next analysis or extension uninstall |
+| Anonymous access key | Your browser (chrome.storage.local) | Until extension uninstall or storage cleared |
 | API request data | Backend memory | Duration of the HTTP request only; not logged |
 | API response data | Backend memory | Duration of the HTTP request only; not logged |
+| Rate limit counters (keyed by anonymous key) | Backend memory | In memory only; cleared on service restart |
 | Hugging Face infrastructure logs | Hugging Face platform | Per Hugging Face's own retention policies, outside the extension developer's control |
 
 ## 10. Automated decision-making
