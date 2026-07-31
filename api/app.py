@@ -4,10 +4,15 @@ os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 import sys
 import re
 import json
+import hmac
+import hashlib
+import base64
+import secrets
+import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
 import torch
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from src.config import checkpoints, device, max_seq_len, data_processed, numeric_features
@@ -318,14 +323,117 @@ class PredictResponse(BaseModel):
     threshold: float = 0.5
     margin: float = 0.1
 
-app = FastAPI(title="Twitter Bot Detector API", version="1.0.0")
+# --- API key auth and rate limiting ---
+# Keys are HMAC-signed with API_SECRET, so they verify statelessly: no database.
+# With API_SECRET unset (local dev), auth is disabled entirely. With it set,
+# keys are issued and rate limited per key, but missing keys are only rejected
+# once REQUIRE_API_KEY=1, so older extension versions keep working during rollout.
+API_SECRET = os.environ.get("API_SECRET", "")
+REQUIRE_API_KEY = os.environ.get("REQUIRE_API_KEY", "") == "1"
+KEY_PREFIX = "xbd1"
+
+RATE_LIMITS = {
+    "free": {"per_minute": 60, "per_day": 1000},
+    "anon": {"per_minute": 60, "per_day": 300},
+}
+REGISTER_LIMIT_PER_HOUR = 5
+
+def _sign_key_payload(payload):
+    digest = hmac.new(API_SECRET.encode(), payload.encode(), hashlib.sha256).digest()
+    return base64.urlsafe_b64encode(digest).decode().rstrip("=")
+
+def issue_api_key(tier="free"):
+    payload = f"{tier}.{secrets.token_urlsafe(9)}.{int(time.time())}"
+    return f"{KEY_PREFIX}.{payload}.{_sign_key_payload(payload)}"
+
+def verify_api_key(key):
+    parts = key.split(".")
+    if len(parts) != 5 or parts[0] != KEY_PREFIX:
+        return None
+    payload = ".".join(parts[1:4])
+    if not hmac.compare_digest(parts[4], _sign_key_payload(payload)):
+        return None
+    return {"tier": parts[1], "key_id": parts[2]}
+
+_rate_buckets = {}
+_register_buckets = {}
+
+def _prune(store, max_entries, max_age):
+    if len(store) <= max_entries:
+        return
+    cutoff = time.time() - max_age
+    for stale in [k for k, v in store.items() if v["seen"] < cutoff]:
+        del store[stale]
+
+def _client_ip(request):
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+def check_rate_limit(bucket, tier, cost=1):
+    limits = RATE_LIMITS.get(tier, RATE_LIMITS["anon"])
+    now = time.time()
+    minute, day = int(now // 60), int(now // 86400)
+    state = _rate_buckets.get(bucket)
+    if state is None:
+        _prune(_rate_buckets, 20000, 86400)
+        state = {"minute": minute, "minute_count": 0, "day": day, "day_count": 0, "seen": now}
+        _rate_buckets[bucket] = state
+    if state["minute"] != minute:
+        state["minute"], state["minute_count"] = minute, 0
+    if state["day"] != day:
+        state["day"], state["day_count"] = day, 0
+    state["seen"] = now
+    if state["day_count"] + cost > limits["per_day"]:
+        retry = (day + 1) * 86400 - int(now)
+        raise HTTPException(status_code=429, detail="daily scan limit reached",
+                            headers={"Retry-After": str(retry)})
+    if state["minute_count"] + cost > limits["per_minute"]:
+        retry = max((minute + 1) * 60 - int(now), 1)
+        raise HTTPException(status_code=429, detail="too many requests, slow down",
+                            headers={"Retry-After": str(retry)})
+    state["minute_count"] += cost
+    state["day_count"] += cost
+
+async def api_key_guard(request: Request, x_api_key: str = Header(default="", alias="X-API-Key")):
+    if not API_SECRET:
+        return {"tier": "free", "bucket": f"ip:{_client_ip(request)}"}
+    key_info = verify_api_key(x_api_key) if x_api_key else None
+    if key_info is None:
+        if REQUIRE_API_KEY:
+            raise HTTPException(status_code=401, detail="missing or invalid API key")
+        return {"tier": "anon", "bucket": f"ip:{_client_ip(request)}"}
+    return {"tier": key_info["tier"], "bucket": f"key:{key_info['key_id']}"}
+
+app = FastAPI(title="Twitter Bot Detector API", version="1.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"^(https://(x|twitter)\.com|chrome-extension://.*)$",
     allow_credentials=False,
     allow_methods=["POST", "GET"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "X-API-Key"],
 )
+
+@app.post("/register")
+async def register(request: Request):
+    if not API_SECRET:
+        raise HTTPException(status_code=503, detail="registration unavailable: API_SECRET not configured")
+    ip = _client_ip(request)
+    now = time.time()
+    hour = int(now // 3600)
+    state = _register_buckets.get(ip)
+    if state is None or state["hour"] != hour:
+        _prune(_register_buckets, 5000, 86400)
+        state = {"hour": hour, "count": 0, "seen": now}
+        _register_buckets[ip] = state
+    state["seen"] = now
+    if state["count"] >= REGISTER_LIMIT_PER_HOUR:
+        retry = (hour + 1) * 3600 - int(now)
+        raise HTTPException(status_code=429, detail="too many registrations from this address",
+                            headers={"Retry-After": str(retry)})
+    state["count"] += 1
+    return {"api_key": issue_api_key("free"), "tier": "free"}
 
 @app.on_event("startup")
 async def startup():
@@ -338,7 +446,8 @@ async def startup():
         print(f"[!] Model load failed: {e}")
 
 @app.post("/predict", response_model=PredictResponse)
-async def predict_endpoint(request: PredictRequest):
+async def predict_endpoint(request: PredictRequest, auth: dict = Depends(api_key_guard)):
+    check_rate_limit(auth["bucket"], auth["tier"])
     try:
         return PredictResponse(**predict(request.model_dump()))
     except FileNotFoundError as e:
@@ -353,9 +462,10 @@ class BatchResponse(BaseModel):
     results: list[PredictResponse]
 
 @app.post("/predict_batch", response_model=BatchResponse)
-async def predict_batch_endpoint(request: BatchRequest):
+async def predict_batch_endpoint(request: BatchRequest, auth: dict = Depends(api_key_guard)):
     if len(request.profiles) > 50:
-        raise HTTPException(status_code=429, detail="batch limit is 50 profiles")
+        raise HTTPException(status_code=413, detail="batch limit is 50 profiles")
+    check_rate_limit(auth["bucket"], auth["tier"], cost=len(request.profiles))
     try:
         results = [PredictResponse(**predict(p.model_dump())) for p in request.profiles]
         return BatchResponse(results=results)
@@ -413,9 +523,10 @@ def score_thread_reply(profile):
     return {"username": username, "flag": flag, "reasons": reasons}
 
 @app.post("/predict_thread_batch", response_model=ThreadReplyBatchResponse)
-async def predict_thread_batch_endpoint(request: ThreadReplyBatchRequest):
+async def predict_thread_batch_endpoint(request: ThreadReplyBatchRequest, auth: dict = Depends(api_key_guard)):
     if len(request.replies) > 100:
-        raise HTTPException(status_code=429, detail="batch limit is 100 replies")
+        raise HTTPException(status_code=413, detail="batch limit is 100 replies")
+    check_rate_limit(auth["bucket"], auth["tier"])
     results = [ThreadReplyResponse(**score_thread_reply(r.model_dump())) for r in request.replies]
     return ThreadReplyBatchResponse(results=results)
 
