@@ -32,7 +32,7 @@ Originally built as a General Assembly Data Science Immersive capstone project (
 
 ## Open items
 - Set REQUIRE_API_KEY=1 on the HF Space once extension 1.1.0 has rolled out (deployed to the Space with API_SECRET set on 31 July 2026; 1.1.0 submitted for Chrome Web Store review the same day; store listing and PRIVACY.md updated to disclose the anonymous access key; a scheduled reminder for the flip runs on 14 August 2026).
-- Move the Space off the free tier (or to another host) so the backend does not sleep; prerequisite for charging users.
+- Backend sleep addressed for now (August 2026) with a GitHub Actions keep-alive workflow (.github/workflows/keepalive.yml) that pings /health every 30 minutes; the free tier sleeps only after 48 hours of inactivity, so this keeps it awake and a failed check emails the owner. Caveat: GitHub disables scheduled workflows after 60 days without repo activity (it emails a warning first; any commit resets the clock). Proper always-on hosting behind a user-owned domain (Railway or Fly.io, roughly $5 to 15 per month plus domain) is deferred until the paid tier launches, so the extension only needs one more URL change and store review.
 - Demo video may need re-recording to reflect the current production version: hosted backend, updated vocabulary, no log-odds display, no CIB clusters shown.
 - Undecided: update GA repo references to point directly at the correct Hugging Face URL, or continue relying on redirects.
 
